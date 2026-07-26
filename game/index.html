@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>TRAVEL HEROS</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='%23e042c8'/><circle cx='6' cy='6' r='2.5' fill='%23ffffff' opacity='0.8'/></svg>">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#2a1a3e">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -26,5 +29,9 @@
 <body>
   <div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
   <script type="module" src="js/main.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:')
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+  </script>
 </body>
 </html>
