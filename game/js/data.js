@@ -100,6 +100,13 @@ export const BUILDINGS = {
   mercado:  { nome: 'Mercado', spr: 'mercado', cost: { ouro: 70, madeira: 2 }, desc: 'Vende recursos por ouro.' },
 };
 
+// fases/biomas: muda a cada 5 ondas (faixas laterais temáticas + cores da arena)
+export const BIOMES = [
+  { nome: 'Floresta', strip: '#16301f', stripDark: '#0e2015', arena: ['#14231b', '#22392b'], deco: 'arvore' },
+  { nome: 'Deserto', strip: '#3a2e1a', stripDark: '#281f10', arena: ['#241d10', '#3a3018'], deco: 'cacto' },
+  { nome: 'Montanhas', strip: '#232c44', stripDark: '#161c2e', arena: ['#161c2c', '#2a3450', ], deco: 'pico' },
+];
+
 export const RES_ICONS = { ouro: 'moeda', trigo: 'trigo', madeira: 'madeira', pedra: 'pedra' };
 export const RES_NAMES = { ouro: 'Ouro', trigo: 'Trigo', madeira: 'Madeira', pedra: 'Pedra' };
 

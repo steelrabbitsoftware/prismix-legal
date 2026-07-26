@@ -44,10 +44,15 @@ MENU → SELEÇÃO DE HERÓI → RUN DE COMBATE (ondas + chefe a cada 5)
 
 ## 4. Combate (a Run)
 
-- Arena vertical; herói desliza na base (teclado ←→/A-D, mouse ou toque).
-- Disparo automático na direção da mira; esferas ricocheteiam em paredes/teto/inimigos.
-- Esfera que sai pelo fundo re-arma no herói (taxa de disparo do personagem).
-- Inimigos descem em **ondas**; tocar a linha inferior fere o herói e o monstro recua.
+- Arena vertical com **faixas laterais temáticas**: cada fase (5 ondas) tem um bioma
+  de natureza — Floresta, Deserto, Montanhas — que muda as cores e decorações.
+- O herói **anda livremente por toda a arena** (WASD/setas, arrastar no toque);
+  encostar em inimigo causa dano (com breve invulnerabilidade).
+- Disparo automático na direção da mira (com assistência); esferas ricocheteiam
+  nas bordas jogáveis e nos inimigos; esfera que sai pelo fundo re-arma no herói.
+- Inimigos surgem **em grade**: fileiras organizadas lado a lado (colunas fixas,
+  tipos aleatórios) que descem juntas, alinhadas, como uma formação; cruzar a
+  linha de defesa fere o herói e o monstro se desfaz.
 - Gemas de EXP caem dos mortos; ao subir de nível: **3 cartas** (nova esfera, melhoria
   de esfera, passiva) + 1 reroll grátis; **fusão** aparece quando duas esferas ≥ nv.3.
 - **Chefe a cada 5 ondas** com barra própria e padrões de investida.

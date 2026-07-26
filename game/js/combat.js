@@ -1,14 +1,18 @@
 // Cena de combate: a Run no Abismo
 import { W, H, PAL, panel, text, button, bar, rnd, irnd, pick, clamp, dist2, fmt } from './engine.js';
 import { drawSprite, ballSprite, shade } from './sprites.js';
-import { BALLS, FUSIONS, ENEMIES, waveSpec, derive } from './data.js';
+import { BALLS, FUSIONS, ENEMIES, BIOMES, waveSpec, derive } from './data.js';
 import { sfx } from './audio.js';
 import * as SAVE from './save.js';
 
 const AR = { x: 252, y: 6, w: 456, h: 528 };       // arena
-const FLOOR = AR.y + AR.h - 30;                     // linha do herói
+const STRIP = 34;                                   // faixas laterais temáticas (biomas)
+const PB = { x: AR.x + STRIP, w: AR.w - STRIP * 2 };// área jogável entre as faixas
+const FLOOR = AR.y + AR.h - 30;                     // linha de defesa (borda inferior)
+const COLS = 6;                                     // colunas da grade de inimigos
 const MAX_SLOTS = 4;
 const FINAL_WAVE = 15;
+const colX = (c) => PB.x + (PB.w / COLS) * (c + 0.5);
 
 export class Combat {
   enter({ char }) {
@@ -21,6 +25,8 @@ export class Combat {
     this.d.hp += 2 * (hl.nivel - 1);
     this.hp = this.d.hp; this.maxHp = this.d.hp;
     this.x = AR.x + AR.w / 2;
+    this.y = FLOOR - 20;                            // movimento livre pela arena
+    this.fase = -1;
     this.level = 1; this.xp = 0; this.xpNext = 6;
     this.gold = 0; this.kills = 0; this.timeAlive = 0;
     this.magnet = 95;
@@ -42,22 +48,41 @@ export class Combat {
     this.nextWave();
   }
 
-  // ---------------- ondas ----------------
+  // ---------------- ondas (formação em grade) ----------------
+  biome() { return BIOMES[Math.floor((this.wave - 1) / 5) % BIOMES.length]; }
+
   nextWave() {
     this.wave++;
     const spec = waveSpec(this.wave);
     this.hpMul = spec.hpMul;
-    this.spawnQueue = [];
+    // velocidade da formação: todos descem juntos, alinhados
+    this.rowSpeed = 15 + this.wave * 1.1;
+    this.spawnQueue = [];   // fila de FILEIRAS (linhas da grade)
     if (spec.boss) {
-      this.spawnQueue.push('boss');
-      for (let i = 0; i < Math.floor(spec.count / 2); i++) this.spawnQueue.push(this.pickType(spec));
+      this.spawnQueue.push(['boss']);
+      let left = Math.floor(spec.count / 2);
+      while (left > 0) { const r = this.makeRow(spec, left); left -= r.filter(Boolean).length; this.spawnQueue.push(r); }
       sfx.boss();
       this.setBanner(this.wave % 15 === 0 ? 'O OLHO FINAL DO ABISMO' : 'CHEFE: OLHO DO ABISMO');
     } else {
-      for (let i = 0; i < spec.count; i++) this.spawnQueue.push(this.pickType(spec));
-      this.setBanner(`Onda ${this.wave}`);
+      let left = spec.count;
+      while (left > 0) { const r = this.makeRow(spec, left); left -= r.filter(Boolean).length; this.spawnQueue.push(r); }
+      const fase = Math.floor((this.wave - 1) / 5);
+      if (fase !== this.fase) {
+        this.fase = fase;
+        this.setBanner(`Fase ${fase + 1} — ${this.biome().nome}`);
+      } else this.setBanner(`Onda ${this.wave}`);
     }
     this.spawnT = 0.5;
+  }
+
+  // fileira: slots lado a lado, preenchidos de forma organizada e aleatória
+  makeRow(spec, maxCount) {
+    const row = new Array(COLS).fill(null);
+    const fill = Math.min(maxCount, irnd(2, Math.min(COLS, 3 + Math.floor(this.wave / 3))));
+    const cols = [0, 1, 2, 3, 4, 5].sort(() => Math.random() - 0.5).slice(0, fill);
+    for (const c of cols) row[c] = this.pickType(spec);
+    return row;
   }
 
   pickType(spec) {
@@ -69,13 +94,18 @@ export class Combat {
 
   setBanner(msg) { this.banner = msg; this.bannerT = 2.2; }
 
-  spawnEnemy(type) {
+  spawnRow(row) {
+    if (row[0] === 'boss' && row.length === 1) { this.spawnEnemy('boss', -1); return; }
+    row.forEach((type, c) => { if (type) this.spawnEnemy(type, c); });
+  }
+
+  spawnEnemy(type, col) {
     const E = ENEMIES[type];
     const boss = !!E.boss;
     const hp = E.hp * this.hpMul * (boss ? 1 + this.wave / 10 : 1);
     this.enemies.push({
       type, ...E, hp, maxHp: hp,
-      x: boss ? AR.x + AR.w / 2 : rnd(AR.x + 30, AR.x + AR.w - 30),
+      x: boss ? AR.x + AR.w / 2 : colX(col),
       y: -30, phase0: rnd(Math.PI * 2),
       conds: {}, hitT: 0,
     });
@@ -97,14 +127,21 @@ export class Combat {
     this.shake = Math.max(0, this.shake - dt * 30);
     if (this.bannerT > 0) this.bannerT -= dt;
 
-    // herói
-    let mv = 0;
-    if (g.key('ArrowLeft') || g.key('KeyA')) mv -= 1;
-    if (g.key('ArrowRight') || g.key('KeyD')) mv += 1;
-    if (mv === 0 && g.pointer.down && g.pointer.y > FLOOR - 40) {
-      mv = clamp((g.pointer.x - this.x) / 30, -1, 1);
+    // herói: movimento livre pela arena inteira (teclado ou arrastar)
+    let mx = 0, my = 0;
+    if (g.key('ArrowLeft') || g.key('KeyA')) mx -= 1;
+    if (g.key('ArrowRight') || g.key('KeyD')) mx += 1;
+    if (g.key('ArrowUp') || g.key('KeyW')) my -= 1;
+    if (g.key('ArrowDown') || g.key('KeyS')) my += 1;
+    if (mx === 0 && my === 0 && g.pointer.down) {
+      const dx = g.pointer.x - this.x, dy = g.pointer.y - this.y;
+      const l = Math.hypot(dx, dy);
+      if (l > 14) { mx = dx / l; my = dy / l; }
     }
-    this.x = clamp(this.x + mv * this.d.moveSpd * this.bonus.move * dt, AR.x + 16, AR.x + AR.w - 16);
+    const ml = Math.hypot(mx, my) || 1;
+    const spd = this.d.moveSpd * this.bonus.move * dt;
+    this.x = clamp(this.x + (mx / ml) * spd, PB.x + 14, PB.x + PB.w - 14);
+    this.y = clamp(this.y + (my / ml) * spd, AR.y + 50, AR.y + AR.h - 18);
 
     // disparo
     this.fireT += dt;
@@ -114,12 +151,12 @@ export class Combat {
       this.fireBall();
     }
 
-    // spawn de inimigos
+    // spawn de fileiras: espaçadas para manter a grade organizada
     if (this.spawnQueue.length) {
       this.spawnT -= dt;
       if (this.spawnT <= 0) {
-        this.spawnEnemy(this.spawnQueue.shift());
-        this.spawnT = this.spawnQueue.length && this.enemies.some(e => e.boss) ? 1.4 : 0.75 - Math.min(0.45, this.wave * 0.03);
+        this.spawnRow(this.spawnQueue.shift());
+        this.spawnT = 68 / this.rowSpeed; // espaçamento vertical constante entre fileiras
       }
     } else if (!this.enemies.length) {
       if (this.wave >= FINAL_WAVE) { this.state = 'won'; this.overT = 1.6; sfx.win(); return; }
@@ -141,8 +178,9 @@ export class Combat {
 
   aimDir() {
     const g = this.game;
-    let dx = g.pointer.x - this.x, dy = g.pointer.y - (FLOOR - 8);
-    if (dy > -20) dy = -20;
+    let dx = g.pointer.x - this.x, dy = g.pointer.y - this.y;
+    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) { dx = 0; dy = -1; }
+    if (dy > -0.1 && Math.abs(dx) < 30) dy = -20; // nunca mira em si mesmo
     const len = Math.hypot(dx, dy) || 1;
     return { x: dx / len, y: dy / len };
   }
@@ -160,11 +198,11 @@ export class Combat {
         let best = null, bd = Infinity;
         for (const e of this.enemies) {
           if (e.hp <= 0 || e.y < AR.y) continue;
-          const d = dist2(e.x, e.y, this.x, FLOOR - 10);
+          const d = dist2(e.x, e.y, this.x, this.y);
           if (d < bd) { bd = d; best = e; }
         }
         if (best) {
-          const ta = Math.atan2(best.y - (FLOOR - 10), best.x - this.x);
+          const ta = Math.atan2(best.y - this.y, best.x - this.x);
           let diff = ta - ang;
           while (diff > Math.PI) diff -= Math.PI * 2;
           while (diff < -Math.PI) diff += Math.PI * 2;
@@ -174,7 +212,7 @@ export class Combat {
         if (this.char.spread) ang += rnd(-this.char.spread, this.char.spread);
         const v = B.vel * this.d.ballVel * this.bonus.vel;
         this.balls.push({
-          slot: s, type: s.type, x: this.x, y: FLOOR - 10,
+          slot: s, type: s.type, x: this.x, y: this.y - 8,
           vx: Math.cos(ang) * v, vy: Math.sin(ang) * v,
           r: B.fusion ? 8 : 6.5, pierce: this.char.pierce || 0, bounces: 0,
         });
@@ -191,8 +229,8 @@ export class Combat {
     const rm = [];
     for (const b of this.balls) {
       b.x += b.vx * dt; b.y += b.vy * dt;
-      if (b.x < AR.x + b.r) { b.x = AR.x + b.r; b.vx = Math.abs(b.vx); b.bounces++; }
-      if (b.x > AR.x + AR.w - b.r) { b.x = AR.x + AR.w - b.r; b.vx = -Math.abs(b.vx); b.bounces++; }
+      if (b.x < PB.x + b.r) { b.x = PB.x + b.r; b.vx = Math.abs(b.vx); b.bounces++; }
+      if (b.x > PB.x + PB.w - b.r) { b.x = PB.x + PB.w - b.r; b.vx = -Math.abs(b.vx); b.bounces++; }
       if (b.y < AR.y + b.r) { b.y = AR.y + b.r; b.vy = Math.abs(b.vy); b.bounces++; }
       if (b.y > AR.y + AR.h + 20) { rm.push(b); continue; }
       if (b.frag && b.bounces > 2) { rm.push(b); continue; }
@@ -311,28 +349,37 @@ export class Combat {
     for (const e of this.enemies) {
       if (e.hp <= 0) { rm.push(e); continue; }
       e.hitT = Math.max(0, e.hitT - dt);
-      let spd = e.spd * (1 + this.wave * 0.02);
+      // formação em grade: todos descem juntos na mesma velocidade
+      let spd = e.boss ? e.spd * (1 + this.wave * 0.02) : this.rowSpeed;
       const c = e.conds;
       if (c.slow && (c.slow.t -= dt) > 0) spd *= c.slow.f; else delete c.slow;
       if (c.burn) { if ((c.burn.t -= dt) > 0) this.dot(e, c.burn.dps * dt, 'fogo'); else delete c.burn; }
       if (c.poison) { if ((c.poison.t -= dt) > 0) this.dot(e, e.maxHp * c.poison.pct * dt, 'veneno'); else delete c.poison; }
       if (c.bleed) { if ((c.bleed.t -= dt) > 0) this.dot(e, c.bleed.dps * c.bleed.stacks * dt, 'sangue'); else delete c.bleed; }
       e.y += spd * dt;
-      if (e.zig) e.x += Math.sin(this.timeAlive * 3 + e.phase0) * 40 * dt;
-      e.x = clamp(e.x, AR.x + 14, AR.x + AR.w - 14);
-      // chegou na linha do herói
-      if (e.y > FLOOR - 14) {
-        if (!this.invulnT || this.invulnT <= 0) {
-          this.hp -= e.dmg;
-          this.invulnT = 0.6;
-          this.shake = 6;
-          sfx.hurt();
-          if (this.hp <= 0) { this.hp = 0; this.state = 'over'; this.overT = 1.4; sfx.lose(); }
-        }
-        e.y -= e.boss ? 60 : 140;
+      e.x = clamp(e.x, PB.x + 14, PB.x + PB.w - 14);
+      // contato direto com o herói
+      const er = e.boss ? 34 : 15;
+      if (dist2(e.x, e.y, this.x, this.y) < (er + 12) ** 2) {
+        this.hurtHero(e.dmg);
+        if (!e.boss) e.y -= 34;
+      }
+      // cruzou a linha de defesa: fere o herói e some
+      if (e.y > AR.y + AR.h - 12) {
+        if (e.boss) { e.y -= 60; this.hurtHero(e.dmg); }
+        else { this.hurtHero(e.dmg); e.hp = 0; rm.push(e); this.burst(e.x, e.y, '#ff6a6a', 8); }
       }
     }
     for (const e of rm) this.enemies.splice(this.enemies.indexOf(e), 1);
+  }
+
+  hurtHero(dmg) {
+    if (this.invulnT > 0) return;
+    this.hp -= dmg;
+    this.invulnT = 0.7;
+    this.shake = 6;
+    sfx.hurt();
+    if (this.hp <= 0) { this.hp = 0; this.state = 'over'; this.overT = 1.4; sfx.lose(); }
   }
 
   dot(e, dmg, type) {
@@ -345,18 +392,20 @@ export class Combat {
   updateDrops(dt) {
     const rm = [];
     for (const d of this.drops) {
-      d.y += d.vy * dt;
-      const dd = dist2(d.x, d.y, this.x, FLOOR - 8);
+      // cai até o chão e espera o herói buscar
+      if (d.y < AR.y + AR.h - 16) d.y += d.vy * dt;
+      else { d.rest = (d.rest || 0) + dt; if (d.rest > 9) rm.push(d); }
+      const dd = dist2(d.x, d.y, this.x, this.y);
       if (dd < this.magnet ** 2) {
         const l = Math.sqrt(dd) || 1;
-        d.x += (this.x - d.x) / l * 260 * dt;
-        d.y += (FLOOR - 8 - d.y) / l * 260 * dt;
+        d.x += (this.x - d.x) / l * 280 * dt;
+        d.y += (this.y - d.y) / l * 280 * dt;
       }
       if (dd < 20 ** 2) {
         rm.push(d);
         if (d.kind === 'gema') { this.gainXp(d.v); sfx.gem(); }
         else { this.gold += d.v; sfx.coin(); }
-      } else if (d.y > AR.y + AR.h + 10) rm.push(d);
+      }
     }
     for (const d of rm) this.drops.splice(this.drops.indexOf(d), 1);
   }
@@ -490,15 +539,32 @@ export class Combat {
     // laterais
     this.renderSide(ctx);
 
-    // arena
+    // arena com cores do bioma da fase
+    const bio = this.biome();
     const grd = ctx.createLinearGradient(0, AR.y, 0, AR.y + AR.h);
-    grd.addColorStop(0, '#170b28'); grd.addColorStop(1, '#2e1c46');
+    grd.addColorStop(0, bio.arena[0]); grd.addColorStop(1, bio.arena[1]);
     ctx.fillStyle = grd; ctx.fillRect(AR.x, AR.y, AR.w, AR.h);
+    // faixas laterais temáticas (natureza da fase)
+    for (const sx of [AR.x, AR.x + AR.w - STRIP]) {
+      const sg = ctx.createLinearGradient(sx, 0, sx + STRIP, 0);
+      sg.addColorStop(sx === AR.x ? 0 : 1, bio.stripDark);
+      sg.addColorStop(sx === AR.x ? 1 : 0, bio.strip);
+      ctx.fillStyle = sg; ctx.fillRect(sx, AR.y, STRIP, AR.h);
+      for (let i = 0; i < 8; i++) {
+        const dy = AR.y + 30 + i * 64 + ((i * 37) % 23);
+        this.drawDeco(ctx, sx + STRIP / 2 + ((i * 13) % 7) - 3, dy, bio.deco);
+      }
+      ctx.strokeStyle = '#00000055'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(sx === AR.x ? sx + STRIP + 0.5 : sx - 0.5, AR.y);
+      ctx.lineTo(sx === AR.x ? sx + STRIP + 0.5 : sx - 0.5, AR.y + AR.h);
+      ctx.stroke();
+    }
     ctx.strokeStyle = PAL.border; ctx.lineWidth = 3;
     ctx.strokeRect(AR.x - 1.5, AR.y - 1.5, AR.w + 3, AR.h + 3);
-    // linha do herói
+    // linha de defesa (base da arena)
     ctx.strokeStyle = '#e8a0bf55'; ctx.setLineDash([6, 6]); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(AR.x, FLOOR); ctx.lineTo(AR.x + AR.w, FLOOR); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(PB.x, AR.y + AR.h - 12); ctx.lineTo(PB.x + PB.w, AR.y + AR.h - 12); ctx.stroke();
     ctx.setLineDash([]);
 
     // poças
@@ -533,13 +599,14 @@ export class Combat {
       ctx.drawImage(img, b.x - img.width / 2, b.y - img.height / 2);
     }
 
-    // herói
-    drawSprite(ctx, this.char.spr, this.x, FLOOR + 6, 2);
+    // herói (pisca quando invulnerável)
+    if (!(this.invulnT > 0 && Math.floor(this.game.time * 14) % 2 === 0))
+      drawSprite(ctx, this.char.spr, this.x, this.y, 2);
     // mira
     const dir = this.aimDir();
     ctx.strokeStyle = '#ffffff33'; ctx.setLineDash([3, 7]);
-    ctx.beginPath(); ctx.moveTo(this.x, FLOOR - 10);
-    ctx.lineTo(this.x + dir.x * 90, FLOOR - 10 + dir.y * 90); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(this.x, this.y - 8);
+    ctx.lineTo(this.x + dir.x * 90, this.y - 8 + dir.y * 90); ctx.stroke();
     ctx.setLineDash([]);
 
     // partículas
@@ -581,12 +648,34 @@ export class Combat {
     }
   }
 
+  // decorações de natureza das faixas laterais
+  drawDeco(ctx, x, y, tipo) {
+    if (tipo === 'arvore') {
+      ctx.fillStyle = '#3a2617'; ctx.fillRect(x - 2, y + 8, 4, 7);
+      ctx.fillStyle = '#2c5e3a';
+      ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x - 9, y + 2); ctx.lineTo(x + 9, y + 2); ctx.fill();
+      ctx.fillStyle = '#37714a';
+      ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x - 11, y + 10); ctx.lineTo(x + 11, y + 10); ctx.fill();
+    } else if (tipo === 'cacto') {
+      ctx.fillStyle = '#4a7c3a';
+      ctx.fillRect(x - 3, y - 10, 6, 22);
+      ctx.fillRect(x - 10, y - 4, 7, 4); ctx.fillRect(x - 10, y - 10, 4, 8);
+      ctx.fillRect(x + 3, y + 0, 7, 4); ctx.fillRect(x + 6, y - 6, 4, 8);
+      ctx.fillStyle = '#5c9448'; ctx.fillRect(x - 1, y - 10, 2, 22);
+    } else if (tipo === 'pico') {
+      ctx.fillStyle = '#5c6784';
+      ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x - 12, y + 10); ctx.lineTo(x + 12, y + 10); ctx.fill();
+      ctx.fillStyle = '#e8ecf5';
+      ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x - 4, y - 5); ctx.lineTo(x + 4, y - 5); ctx.fill();
+    }
+  }
+
   renderSide(ctx) {
     // painel esquerdo: herói
     panel(ctx, 8, 8, 236, 250);
     drawSprite(ctx, this.char.spr, 40, 44, 4);
     text(ctx, this.char.nome, 76, 24, { size: 15, bold: true, color: PAL.gold });
-    text(ctx, `Onda ${this.wave}/${FINAL_WAVE}`, 76, 44, { size: 13 });
+    text(ctx, `Onda ${this.wave}/${FINAL_WAVE} · ${this.biome().nome}`, 76, 44, { size: 12 });
     text(ctx, `PV`, 20, 84, { size: 12 });
     bar(ctx, 50, 84, 170, 12, this.hp / this.maxHp, PAL.hp);
     text(ctx, `${Math.ceil(this.hp)}/${this.maxHp}`, 135, 84, { size: 10, align: 'center', color: '#fff' });
