@@ -155,7 +155,7 @@ export class Base {
       text(ctx, fmt(this.s.recursos[k] || 0), x + 22, 12, { size: 15, bold: true, color: k === 'ouro' ? PAL.gold : PAL.text });
       x += 110;
     }
-    text(ctx, 'A BASE × O ABISMO', W - 16, 12, { align: 'right', size: 15, bold: true, color: PAL.border });
+    text(ctx, 'TRAVEL HEROS · A BASE', W - 16, 12, { align: 'right', size: 15, bold: true, color: PAL.border });
   }
 
   renderToolbar(ctx) {

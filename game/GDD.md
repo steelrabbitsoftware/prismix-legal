@@ -1,4 +1,4 @@
-# PRISMA × ABISMO — Game Design Document (o "prompt" do projeto)
+# TRAVEL HEROS — Game Design Document (o "prompt" do projeto)
 
 > **Gênero:** Roguelite de ricochete (breakout-survivors) + construção de base
 > **Inspiração:** BALL x PIT (Devolver Digital, 2025) — mesmas premissas, execução melhor
@@ -10,7 +10,7 @@
 
 ## 1. Visão
 
-O jogador comanda heróis que desceram ao **Abismo** para selá-lo. O combate é um
+Em **TRAVEL HEROS**, o jogador comanda heróis viajantes que desceram ao **Abismo** para selá-lo. O combate é um
 *breakout invertido*: o herói se move na borda inferior da arena e dispara **esferas**
 que ricocheteiam pelas paredes e trituram hordas de monstros que descem do topo.
 Entre as descidas (runs), os sobreviventes constroem uma **cidade na borda do Abismo**
@@ -19,7 +19,7 @@ melhorias permanentes.
 
 **Por que "muito melhor" que a referência:**
 
-| Referência (BALL x PIT)            | PRISMA × ABISMO                                             |
+| Referência (BALL x PIT)            | TRAVEL HEROS                                                |
 |------------------------------------|-------------------------------------------------------------|
 | Fusões fixas de 2 esferas          | Fusões **elementais reativas** (as condições interagem: molhado+raio = superchoque, queimadura+vento = incêndio alastrante) |
 | Colheita manual com trabalhador    | Colheita com **relógio de colheita + coleta em um toque**, sem micro chato |
@@ -115,7 +115,7 @@ velocidade da esfera por VEL · crítico por DES · poder de condição por INT.
 
 ## 9. Persistência
 
-`localStorage` (chave `prisma_abismo_save_v1`): recursos, edifícios, heróis
+`localStorage` (chave `travel_heros_save_v1`): recursos, edifícios, heróis
 desbloqueados, EXP/nível por herói, recordes, melhorias permanentes.
 
 ## 10. Roadmap

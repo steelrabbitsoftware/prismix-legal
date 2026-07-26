@@ -1,5 +1,5 @@
 // Persistência em localStorage
-const KEY = 'prisma_abismo_save_v1';
+const KEY = 'travel_heros_save_v1';
 
 const DEFAULT = {
   recursos: { ouro: 60, trigo: 0, madeira: 0, pedra: 0 },

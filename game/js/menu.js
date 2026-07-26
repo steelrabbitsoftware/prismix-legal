@@ -37,9 +37,9 @@ export class Menu {
     }
     ctx.globalAlpha = 1;
 
-    text(ctx, 'PRISMA', W / 2 - 78, 110, { align: 'center', size: 52, bold: true, color: '#ff8ae8' });
+    text(ctx, 'TRAVEL', W / 2 - 75, 110, { align: 'center', size: 52, bold: true, color: '#ff8ae8' });
     text(ctx, '×', W / 2 + 32, 118, { align: 'center', size: 40, bold: true, color: PAL.gold });
-    text(ctx, 'ABISMO', W / 2 + 148, 110, { align: 'center', size: 52, bold: true, color: '#8ab6ff' });
+    text(ctx, 'HEROS', W / 2 + 132, 110, { align: 'center', size: 52, bold: true, color: '#8ab6ff' });
     text(ctx, 'um roguelite de ricochete + construção de base — por PRISMIX', W / 2, 178, { align: 'center', size: 13, color: PAL.textDim });
 
     if (button(g, ctx, 'play', '⚔  JOGAR', W / 2 - 140, 240, 280, 48, { size: 18, color: PAL.gold })) {
