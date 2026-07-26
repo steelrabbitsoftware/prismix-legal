@@ -9,6 +9,11 @@ const DEFAULT = {
   recordes: { onda: 0, abates: 0, dano: 0 },
   runs: 0,
   lastSeen: 0,
+  config: {
+    modo: 'split',      // 'split' = esquerda move / direita mira · 'auto' = 1 dedo, mira automática
+    canhoto: false,     // inverte os lados (mira à esquerda, movimento à direita)
+    haptico: true,
+  },
 };
 
 let state = null;
@@ -18,6 +23,7 @@ export function load() {
   try {
     const raw = localStorage.getItem(KEY);
     state = raw ? { ...structuredClone(DEFAULT), ...JSON.parse(raw) } : structuredClone(DEFAULT);
+    state.config = { ...structuredClone(DEFAULT.config), ...(state.config || {}) };
   } catch (e) { state = structuredClone(DEFAULT); }
   return state;
 }
@@ -29,6 +35,8 @@ export function save() {
 export function reset() { state = structuredClone(DEFAULT); save(); }
 
 // bônus permanentes derivados dos edifícios
+export function config() { return load().config; }
+
 export function metaBonus() {
   const s = load();
   let dmgBonus = 0, hpBonus = 0;

@@ -2,6 +2,7 @@
 import { W, H, PAL, panel, text, button, rnd, fmt } from './engine.js';
 import { ballSprite } from './sprites.js';
 import { sfx, toggleMute } from './audio.js';
+import { drawControlOptions } from './options.js';
 import * as SAVE from './save.js';
 
 const COLORS = ['#ff7a3c', '#6fd0ff', '#e8425a', '#7cd046', '#ffe04a', '#9aa2b0', '#7ce8d0', '#e8e8ff'];
@@ -10,6 +11,7 @@ export class Menu {
   enter() {
     this.s = SAVE.load();
     this.confirmReset = false;
+    this.opcoes = false;
     this.balls = Array.from({ length: 14 }, () => ({
       x: rnd(W), y: rnd(H), vx: rnd(-120, 120), vy: rnd(-120, 120),
       r: rnd(5, 11), c: COLORS[Math.floor(rnd(COLORS.length))],
@@ -46,13 +48,26 @@ export class Menu {
       sfx.click(); g.switch('charselect');
     }
     if (button(g, ctx, 'base', '⌂  A BASE', W / 2 - 140, 300, 280, 44)) { sfx.click(); g.switch('base'); }
+    if (button(g, ctx, 'opts', '⚙  CONTROLES', W / 2 - 140, 352, 280, 38, { size: 13 })) {
+      sfx.click(); this.opcoes = true;
+      return;   // consome o clique: o overlay abre só no próximo quadro
+    }
 
     // recordes
-    panel(ctx, W / 2 - 170, 366, 340, 92);
-    text(ctx, 'Recordes', W / 2, 376, { align: 'center', size: 14, bold: true, color: PAL.border });
+    panel(ctx, W / 2 - 170, 400, 340, 74);
+    text(ctx, 'Recordes', W / 2, 408, { align: 'center', size: 13, bold: true, color: PAL.border });
     const r = this.s.recordes;
-    text(ctx, `Onda máx: ${r.onda}   Abates: ${fmt(r.abates)}   Dano: ${fmt(r.dano)}`, W / 2, 400, { align: 'center', size: 12 });
-    text(ctx, `Runs: ${this.s.runs}`, W / 2, 420, { align: 'center', size: 12, color: PAL.textDim });
+    text(ctx, `Onda máx: ${r.onda}   Abates: ${fmt(r.abates)}   Dano: ${fmt(r.dano)}`, W / 2, 430, { align: 'center', size: 12 });
+    text(ctx, `Runs: ${this.s.runs}`, W / 2, 450, { align: 'center', size: 12, color: PAL.textDim });
+
+    if (this.opcoes) {
+      ctx.fillStyle = '#000000cc'; ctx.fillRect(0, 0, W, H);
+      panel(ctx, W / 2 - 200, 80, 400, 340);
+      text(ctx, 'Opções', W / 2, 96, { align: 'center', size: 20, bold: true, color: PAL.gold });
+      drawControlOptions(g, ctx, W / 2 - 175, 130, 350, this.s.config);
+      if (button(g, ctx, 'opt_close', 'Fechar', W / 2 - 175, 366, 350, 38)) { sfx.click(); this.opcoes = false; }
+      return;
+    }
 
     if (!this.confirmReset) {
       if (button(g, ctx, 'reset', 'Apagar save', W - 150, H - 46, 130, 32, { size: 11 })) this.confirmReset = true;

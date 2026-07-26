@@ -46,13 +46,37 @@ MENU → SELEÇÃO DE HERÓI → RUN DE COMBATE (ondas + chefe a cada 5)
 
 - Arena vertical com **faixas laterais temáticas**: cada fase (5 ondas) tem um bioma
   de natureza — Floresta, Deserto, Montanhas — que muda as cores e decorações.
-- O herói **anda livremente por toda a arena** (WASD/setas, arrastar no toque);
-  encostar em inimigo causa dano (com breve invulnerabilidade).
-- Disparo automático na direção da mira (com assistência); esferas ricocheteiam
-  nas bordas jogáveis e nos inimigos; esfera que sai pelo fundo re-arma no herói.
+  A estrada rola sob os pés: o grupo avança pelo caminho enquanto os monstros vêm.
+- O herói **anda livremente por toda a arena**; encostar em inimigo causa dano
+  (com breve invulnerabilidade).
+
+### 4.0 Controles (mobile-first)
+
+| Modo | Como funciona |
+|------|----------------|
+| **Tela dividida** (padrão) | Um lado da tela move (arrasto relativo), o outro posiciona a mira. Lados invertíveis para canhotos. |
+| **Um dedo (auto)** | Arraste em qualquer lugar para mover; a mira trava sozinha no inimigo mais próximo. |
+
+Editável no **Menu → Controles** e na **Pausa**, no meio da partida. Teclado
+(WASD/setas + mouse) segue valendo no desktop. Vibração háptica opcional.
+
+O **tiro é automático**, mas a dificuldade exige perícia: a mira manual decide
+quais alvos morrem primeiro, e sobreviver depende de posicionamento.
+
+- Esferas ricocheteiam nas bordas jogáveis e nos inimigos; esfera que sai pelo
+  fundo re-arma no herói.
 - Inimigos surgem **em grade**: fileiras organizadas lado a lado (colunas fixas,
-  tipos aleatórios) que descem juntas, alinhadas, como uma formação; cruzar a
-  linha de defesa fere o herói e o monstro se desfaz.
+  tipos aleatórios) que descem juntas, alinhadas, como uma formação.
+
+### 4.0.1 Zona de perigo e ameaças
+
+- **Zona de perigo**: quando um monstro chega perto da borda inferior, ele
+  **para, telegrafa por ~1,5s** (anel vermelho fechando + "!") e desfere um
+  **golpe pesado** (2,2× o dano de contato). Não há linha desenhada na tela —
+  o aviso é o próprio monstro; o brilho vermelho só acende durante a carga.
+- **Ataques à distância**: alguns inimigos atiram — Aranha (flecha rápida),
+  Caveira e Fantasma (magia). Os projéteis são desviáveis, o que torna o
+  movimento tão importante quanto a mira.
 - Gemas de EXP caem dos mortos; ao subir de nível: **3 cartas** (nova esfera, melhoria
   de esfera, passiva) + 1 reroll grátis; **fusão** aparece quando duas esferas ≥ nv.3.
 - **Chefe a cada 5 ondas** com barra própria e padrões de investida.

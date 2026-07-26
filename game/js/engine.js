@@ -30,11 +30,49 @@ export class Game {
 
   _bindInput() {
     const c = this.canvas;
+    this.touches = new Map();   // id → {x, y, dx, dy, startX, startY}
+    const toXY = (clientX, clientY) => {
+      const r = c.getBoundingClientRect();
+      return { x: (clientX - r.left) * (W / r.width), y: (clientY - r.top) * (H / r.height) };
+    };
+    // multitouch: cada dedo é rastreado separadamente (controles divididos)
+    const tStart = (e) => {
+      for (const t of e.changedTouches) {
+        const p = toXY(t.clientX, t.clientY);
+        this.touches.set(t.identifier, { x: p.x, y: p.y, dx: 0, dy: 0, startX: p.x, startY: p.y });
+      }
+      const f = e.touches[0];
+      if (f) { const p = toXY(f.clientX, f.clientY); this.pointer.x = p.x; this.pointer.y = p.y; }
+      this.pointer.down = true; this.pointer.justDown = true;
+      e.preventDefault();
+    };
+    const tMove = (e) => {
+      for (const t of e.changedTouches) {
+        const p = toXY(t.clientX, t.clientY);
+        const rec = this.touches.get(t.identifier);
+        if (rec) { rec.dx += p.x - rec.x; rec.dy += p.y - rec.y; rec.x = p.x; rec.y = p.y; }
+      }
+      const f = e.touches[0];
+      if (f) {
+        const p = toXY(f.clientX, f.clientY);
+        this.pointer.moveDX = (this.pointer.moveDX || 0) + (p.x - this.pointer.x);
+        this.pointer.moveDY = (this.pointer.moveDY || 0) + (p.y - this.pointer.y);
+        this.pointer.x = p.x; this.pointer.y = p.y;
+      }
+      e.preventDefault();
+    };
+    const tEnd = (e) => {
+      for (const t of e.changedTouches) this.touches.delete(t.identifier);
+      if (!e.touches.length) { this.pointer.down = false; this.pointer.justUp = true; }
+    };
+    c.addEventListener('touchstart', tStart, { passive: false });
+    c.addEventListener('touchmove', tMove, { passive: false });
+    window.addEventListener('touchend', tEnd);
+    window.addEventListener('touchcancel', tEnd);
+
     const toLogical = (e) => {
       const r = c.getBoundingClientRect();
-      const cx = (e.touches ? e.touches[0]?.clientX ?? this._tx : e.clientX);
-      const cy = (e.touches ? e.touches[0]?.clientY ?? this._ty : e.clientY);
-      this._tx = cx; this._ty = cy;
+      const cx = e.clientX, cy = e.clientY;
       return { x: (cx - r.left) * (W / r.width), y: (cy - r.top) * (H / r.height) };
     };
     const down = (e) => { const p = toLogical(e); this.pointer.x = p.x; this.pointer.y = p.y; this.pointer.down = true; this.pointer.justDown = true; e.preventDefault(); };
@@ -49,9 +87,6 @@ export class Game {
     const up = (e) => { this.pointer.down = false; this.pointer.justUp = true; };
     c.addEventListener('mousedown', down); c.addEventListener('mousemove', move);
     window.addEventListener('mouseup', up);
-    c.addEventListener('touchstart', down, { passive: false });
-    c.addEventListener('touchmove', (e) => { move(e); e.preventDefault(); }, { passive: false });
-    window.addEventListener('touchend', up);
     window.addEventListener('keydown', (e) => {
       if (!this.keys.has(e.code)) this.justKeys.add(e.code);
       this.keys.add(e.code);
@@ -80,6 +115,7 @@ export class Game {
     }
     this.pointer.justDown = false; this.pointer.justUp = false;
     this.pointer.moveDX = 0; this.pointer.moveDY = 0;
+    for (const t of this.touches.values()) { t.dx = 0; t.dy = 0; }
     this.justKeys.clear();
   }
 }

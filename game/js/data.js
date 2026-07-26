@@ -27,13 +27,18 @@ export const FUSIONS = [
   { a: 'fogo', b: 'sangue', out: 'solnegro' },
 ];
 
+// ranged: {tipo, cd, dano, vel, alcance} — só alguns inimigos atiram de longe
 export const ENEMIES = {
   slime:    { nome: 'Gosma', spr: 'slime', hp: 18, spd: 26, dmg: 8, xp: 1, gold: 1, scale: 3 },
   morcego:  { nome: 'Morcego', spr: 'morcego', hp: 10, spd: 46, dmg: 6, xp: 1, gold: 1, zig: true, scale: 3 },
-  caveira:  { nome: 'Caveira', spr: 'caveira', hp: 42, spd: 18, dmg: 12, xp: 2, gold: 2, scale: 3 },
-  aranha:   { nome: 'Aranha', spr: 'aranha', hp: 24, spd: 34, dmg: 8, xp: 2, gold: 2, zig: true, scale: 3 },
-  fantasma: { nome: 'Fantasma', spr: 'fantasma', hp: 30, spd: 30, dmg: 10, xp: 2, gold: 2, phase: true, scale: 3 },
-  boss:     { nome: 'Olho do Abismo', spr: 'boss', hp: 550, spd: 9, dmg: 30, xp: 25, gold: 30, boss: true, scale: 6 },
+  caveira:  { nome: 'Caveira', spr: 'caveira', hp: 42, spd: 18, dmg: 12, xp: 2, gold: 2, scale: 3,
+              ranged: { tipo: 'magia', cd: 3.2, dano: 9, vel: 165 } },
+  aranha:   { nome: 'Aranha', spr: 'aranha', hp: 24, spd: 34, dmg: 8, xp: 2, gold: 2, zig: true, scale: 3,
+              ranged: { tipo: 'flecha', cd: 2.6, dano: 7, vel: 230 } },
+  fantasma: { nome: 'Fantasma', spr: 'fantasma', hp: 30, spd: 30, dmg: 10, xp: 2, gold: 2, phase: true, scale: 3,
+              ranged: { tipo: 'magia', cd: 2.8, dano: 11, vel: 150 } },
+  boss:     { nome: 'Olho do Abismo', spr: 'boss', hp: 550, spd: 9, dmg: 30, xp: 25, gold: 30, boss: true, scale: 6,
+              ranged: { tipo: 'magia', cd: 1.8, dano: 14, vel: 175 } },
 };
 
 // composição de ondas: pesos por profundidade

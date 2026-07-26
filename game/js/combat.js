@@ -3,6 +3,7 @@ import { W, H, PAL, panel, text, button, bar, rnd, irnd, pick, clamp, dist2, fmt
 import { drawSprite, ballSprite, shade } from './sprites.js';
 import { BALLS, FUSIONS, ENEMIES, BIOMES, waveSpec, derive } from './data.js';
 import { sfx, buzz } from './audio.js';
+import { drawControlOptions } from './options.js';
 import * as SAVE from './save.js';
 
 const AR = { x: 252, y: 6, w: 456, h: 528 };       // arena
@@ -10,6 +11,8 @@ const STRIP = 34;                                   // faixas laterais temática
 const PB = { x: AR.x + STRIP, w: AR.w - STRIP * 2 };// área jogável entre as faixas
 const FLOOR = AR.y + AR.h - 30;                     // linha de defesa (borda inferior)
 const COLS = 6;                                     // colunas da grade de inimigos
+const DANGER_Y = AR.y + AR.h - 96;                  // linha vermelha: início da zona de perigo
+const TELEGRAPH = 1.5;                              // segundos de aviso antes do golpe pesado
 const MAX_SLOTS = 4;
 const FINAL_WAVE = 15;
 const colX = (c) => PB.x + (PB.w / COLS) * (c + 0.5);
@@ -36,6 +39,10 @@ export class Combat {
       const t = pick(['fogo', 'gelo', 'sangue', 'veneno', 'raio', 'ferro', 'vento']);
       this.slots.push({ type: t, level: 1, count: this.d.babyCount, inFlight: 0 });
     }
+    this.cfg = SAVE.config();
+    this.aimTouch = null;
+    this.foeShots = [];      // flechas e magias dos inimigos
+    this.roadY = 0;          // deslocamento da estrada (sensação de avanço)
     this.balls = []; this.enemies = []; this.drops = []; this.pools = [];
     this.parts = []; this.nums = [];
     this.wave = 0; this.spawnQueue = []; this.spawnT = 0;
@@ -127,7 +134,7 @@ export class Combat {
     this.shake = Math.max(0, this.shake - dt * 30);
     if (this.bannerT > 0) this.bannerT -= dt;
 
-    // herói: teclado OU arrasto relativo (padrão mobile — o dedo nunca cobre o herói)
+    // ---- controles ----
     let mx = 0, my = 0;
     if (g.key('ArrowLeft') || g.key('KeyA')) mx -= 1;
     if (g.key('ArrowRight') || g.key('KeyD')) mx += 1;
@@ -137,11 +144,23 @@ export class Combat {
     if (mx || my) {
       const ml = Math.hypot(mx, my);
       this.x += (mx / ml) * spd; this.y += (my / ml) * spd;
+    } else if (this.cfg.modo === 'split' && g.touches && g.touches.size) {
+      // tela dividida: um lado move, o outro posiciona a mira
+      const moveEsq = !this.cfg.canhoto;
+      this.aimTouch = null;
+      for (const t of g.touches.values()) {
+        const naEsquerda = t.startX < W / 2;
+        if (naEsquerda === moveEsq) {          // lado de movimento: arrasto relativo
+          this.x += t.dx * 1.6; this.y += t.dy * 1.6;
+        } else {                               // lado da mira: posição absoluta
+          this.aimTouch = { x: t.x, y: t.y };
+        }
+      }
     } else if (g.pointer.down) {
-      // 1 px de arrasto = 1,6 px de movimento do herói
       this.x += (g.pointer.moveDX || 0) * 1.6;
       this.y += (g.pointer.moveDY || 0) * 1.6;
     }
+    if (this.cfg.modo === 'split' && (!g.touches || !g.touches.size)) this.aimTouch = null;
     this.x = clamp(this.x, PB.x + 14, PB.x + PB.w - 14);
     this.y = clamp(this.y, AR.y + 50, AR.y + AR.h - 18);
 
@@ -166,8 +185,10 @@ export class Combat {
       this.nextWave();
     }
 
+    this.roadY = (this.roadY + 34 * dt) % 48;   // estrada avançando
     this.updateBalls(dt);
     this.updateEnemies(dt);
+    this.updateFoeShots(dt);
     this.updateDrops(dt);
     this.updatePools(dt);
 
@@ -189,14 +210,24 @@ export class Combat {
     return best;
   }
 
-  aimDir() {
-    const t = this.target();
-    if (t) {
-      const dx = t.x - this.x, dy = t.y - this.y;
-      const l = Math.hypot(dx, dy) || 1;
-      return { x: dx / l, y: dy / l };
+  // ponto de mira: manual (dedo da direita / mouse) ou automático no mais próximo
+  aimPoint() {
+    if (this.cfg.modo === 'split') {
+      if (this.aimTouch) return this.aimTouch;
+      const g = this.game;
+      if (!g.touches.size && g.pointer.x > AR.x) return { x: g.pointer.x, y: g.pointer.y, manual: true };
     }
-    return { x: 0, y: -1 };
+    const t = this.target();
+    if (t) return { x: t.x, y: t.y, auto: true };
+    return { x: this.x, y: this.y - 100, auto: true };
+  }
+
+  aimDir() {
+    const p = this.aimPoint();
+    let dx = p.x - this.x, dy = p.y - this.y;
+    if (Math.abs(dx) < 2 && Math.abs(dy) < 2) { dx = 0; dy = -1; }
+    const l = Math.hypot(dx, dy) || 1;
+    return { x: dx / l, y: dy / l };
   }
 
   fireBall() {
@@ -362,29 +393,79 @@ export class Combat {
       if (c.burn) { if ((c.burn.t -= dt) > 0) this.dot(e, c.burn.dps * dt, 'fogo'); else delete c.burn; }
       if (c.poison) { if ((c.poison.t -= dt) > 0) this.dot(e, e.maxHp * c.poison.pct * dt, 'veneno'); else delete c.poison; }
       if (c.bleed) { if ((c.bleed.t -= dt) > 0) this.dot(e, c.bleed.dps * c.bleed.stacks * dt, 'sangue'); else delete c.bleed; }
-      e.y += spd * dt;
+      // ZONA DE PERIGO: ao cruzar a linha vermelha o monstro para, telegrafa e golpeia forte
+      if (e.y >= DANGER_Y && !e.boss) {
+        e.y = Math.min(e.y + spd * dt * 0.25, DANGER_Y + 26);
+        e.charge = (e.charge || 0) + dt;
+        if (e.charge >= TELEGRAPH) {
+          e.charge = 0;
+          this.heavyStrike(e);
+        }
+      } else {
+        e.y += spd * dt;
+        if (e.charge) e.charge = 0;
+      }
       e.x = clamp(e.x, PB.x + 14, PB.x + PB.w - 14);
+
+      // ataques à distância: alguns inimigos disparam flechas/magias
+      if (e.ranged && e.y > AR.y + 10) {
+        e.shotT = (e.shotT === undefined ? rnd(0.5, e.ranged.cd) : e.shotT) - dt;
+        if (e.shotT <= 0) { e.shotT = e.ranged.cd * rnd(0.85, 1.2); this.foeShoot(e); }
+      }
+
       // contato direto com o herói
       const er = e.boss ? 34 : 15;
       if (dist2(e.x, e.y, this.x, this.y) < (er + 12) ** 2) {
         this.hurtHero(e.dmg);
         if (!e.boss) e.y -= 34;
       }
-      // cruzou a linha de defesa: fere o herói e some
-      if (e.y > AR.y + AR.h - 12) {
-        if (e.boss) { e.y -= 60; this.hurtHero(e.dmg); }
-        else { this.hurtHero(e.dmg); e.hp = 0; rm.push(e); this.burst(e.x, e.y, '#ff6a6a', 8); }
-      }
+      // chefe cruzando o fundo
+      if (e.boss && e.y > AR.y + AR.h - 12) { e.y -= 60; this.hurtHero(e.dmg); }
     }
     for (const e of rm) this.enemies.splice(this.enemies.indexOf(e), 1);
   }
 
-  hurtHero(dmg) {
+  // golpe pesado da zona de perigo (dano significativo)
+  heavyStrike(e) {
+    const dmg = e.dmg * 2.2;
+    this.hurtHero(dmg, true);
+    this.burst(this.x, this.y, '#ff3a5a', 16);
+    this.shake = 10;
+    this.parts.push({ x: e.x, y: e.y, vx: 0, vy: 0, t: 0.25, arc: { x2: this.x, y2: this.y }, col: '#ff3a5a' });
+  }
+
+  // flechas e magias dos inimigos
+  foeShoot(e) {
+    const dx = this.x - e.x, dy = this.y - e.y;
+    const l = Math.hypot(dx, dy) || 1;
+    const R = e.ranged;
+    this.foeShots.push({
+      x: e.x, y: e.y + 8, vx: (dx / l) * R.vel, vy: (dy / l) * R.vel,
+      dano: R.dano * (1 + this.wave * 0.05), tipo: R.tipo, t: 4,
+    });
+  }
+
+  updateFoeShots(dt) {
+    const rm = [];
+    for (const s of this.foeShots) {
+      s.x += s.vx * dt; s.y += s.vy * dt; s.t -= dt;
+      if (s.t <= 0 || s.y > AR.y + AR.h || s.y < AR.y - 20 || s.x < PB.x - 20 || s.x > PB.x + PB.w + 20) { rm.push(s); continue; }
+      if (dist2(s.x, s.y, this.x, this.y) < 13 ** 2) {
+        this.hurtHero(s.dano);
+        this.burst(s.x, s.y, s.tipo === 'flecha' ? '#e8d0a0' : '#c96fff', 8);
+        rm.push(s);
+      }
+    }
+    for (const s of rm) this.foeShots.splice(this.foeShots.indexOf(s), 1);
+  }
+
+  hurtHero(dmg, pesado) {
     if (this.invulnT > 0) return;
     this.hp -= dmg;
-    this.invulnT = 0.7;
-    this.shake = 6;
-    sfx.hurt(); buzz(60);
+    this.invulnT = pesado ? 0.9 : 0.7;
+    this.shake = Math.max(this.shake, pesado ? 10 : 6);
+    this.nums.push({ x: this.x, y: this.y - 22, v: Math.round(dmg), t: 0.9, crit: !!pesado, foe: true });
+    sfx.hurt(); if (this.cfg.haptico) buzz(pesado ? 140 : 60);
     if (this.hp <= 0) { this.hp = 0; this.state = 'over'; this.overT = 1.4; sfx.lose(); }
   }
 
@@ -566,12 +647,23 @@ export class Combat {
       ctx.lineTo(sx === AR.x ? sx + STRIP + 0.5 : sx - 0.5, AR.y + AR.h);
       ctx.stroke();
     }
+    // marcas da estrada em movimento (o grupo avança pelo caminho)
+    ctx.fillStyle = '#ffffff10';
+    for (let y = AR.y - 48 + this.roadY; y < AR.y + AR.h; y += 48)
+      ctx.fillRect(PB.x + PB.w / 2 - 2, Math.max(AR.y, y), 4, Math.min(22, AR.y + AR.h - y));
     ctx.strokeStyle = PAL.border; ctx.lineWidth = 3;
     ctx.strokeRect(AR.x - 1.5, AR.y - 1.5, AR.w + 3, AR.h + 3);
-    // linha de defesa (base da arena)
-    ctx.strokeStyle = '#e8a0bf55'; ctx.setLineDash([6, 6]); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(PB.x, AR.y + AR.h - 12); ctx.lineTo(PB.x + PB.w, AR.y + AR.h - 12); ctx.stroke();
-    ctx.setLineDash([]);
+    // ZONA DE PERIGO: sem linha desenhada — só um brilho de alerta quando
+    // algum monstro está carregando o golpe (o aviso real fica no monstro)
+    const perigo = this.enemies.some(e => e.charge > 0);
+    if (perigo) {
+      const gp = ctx.createLinearGradient(0, DANGER_Y, 0, AR.y + AR.h);
+      const inten = 0.10 + Math.abs(Math.sin(this.game.time * 9)) * 0.16;
+      gp.addColorStop(0, 'rgba(232,60,80,0)');
+      gp.addColorStop(1, `rgba(232,60,80,${inten})`);
+      ctx.fillStyle = gp;
+      ctx.fillRect(PB.x, DANGER_Y, PB.w, AR.y + AR.h - DANGER_Y);
+    }
 
     // poças
     for (const p of this.pools) {
@@ -590,6 +682,15 @@ export class Combat {
       ctx.globalAlpha = 1;
       const er = e.boss ? 36 : 16;
       if (e.hp < e.maxHp && !e.boss) bar(ctx, e.x - 14, e.y - er - 6, 28, 4, e.hp / e.maxHp, PAL.hp);
+      // telegrafia do golpe pesado: anel vermelho fechando + aviso
+      if (e.charge > 0) {
+        const f = e.charge / TELEGRAPH;
+        ctx.strokeStyle = '#ff3a5a'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(e.x, e.y, 26 - f * 12, 0, Math.PI * 2 * f); ctx.stroke();
+        ctx.lineWidth = 1;
+        if (f > 0.65 && Math.floor(this.game.time * 10) % 2 === 0)
+          text(ctx, '!', e.x, e.y - er - 20, { align: 'center', size: 16, bold: true, color: '#ff3a5a' });
+      }
       // ícones de condição
       let ci = 0;
       const condCols = { burn: '#ff7a3c', slow: '#6fd0ff', poison: '#7cd046', bleed: '#e8425a' };
@@ -620,13 +721,28 @@ export class Combat {
     // herói (pisca quando invulnerável)
     if (!(this.invulnT > 0 && Math.floor(this.game.time * 14) % 2 === 0))
       drawSprite(ctx, this.char.spr, this.x, this.y, 2);
-    // retícula sobre o alvo automático + linha de mira
-    const alvo = this.target();
-    if (alvo) {
-      ctx.strokeStyle = '#ffffff2e'; ctx.setLineDash([3, 7]); ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(this.x, this.y - 8); ctx.lineTo(alvo.x, alvo.y); ctx.stroke();
-      ctx.setLineDash([]);
-      this.drawReticle(ctx, alvo.x, alvo.y);
+    // retícula na mira (manual ou automática) + linha de disparo
+    const ap = this.aimPoint();
+    ctx.strokeStyle = '#ffffff2e'; ctx.setLineDash([3, 7]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(this.x, this.y - 8); ctx.lineTo(ap.x, ap.y); ctx.stroke();
+    ctx.setLineDash([]);
+    this.drawReticle(ctx, ap.x, ap.y, !ap.auto);
+
+    // flechas e magias inimigas
+    for (const s of this.foeShots) {
+      if (s.tipo === 'flecha') {
+        const a = Math.atan2(s.vy, s.vx);
+        ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(a);
+        ctx.fillStyle = '#e8d0a0'; ctx.fillRect(-7, -1.5, 14, 3);
+        ctx.fillStyle = '#8a6f4a'; ctx.fillRect(5, -3, 4, 6);
+        ctx.restore();
+      } else {
+        const r = 6 + Math.sin(this.game.time * 14) * 1.2;
+        const gg = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, r);
+        gg.addColorStop(0, '#ffffff'); gg.addColorStop(0.5, '#c96fff'); gg.addColorStop(1, '#5c1a8a00');
+        ctx.fillStyle = gg;
+        ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI * 2); ctx.fill();
+      }
     }
 
     // partículas
@@ -644,10 +760,10 @@ export class Combat {
       ctx.font = `bold ${s}px "Courier New", monospace`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       ctx.globalAlpha = Math.min(1, n.t * 2.2);
-      const str = n.crit ? n.v + '!' : String(n.v);
+      const str = n.foe ? '-' + n.v : (n.crit ? n.v + '!' : String(n.v));
       ctx.lineWidth = 3; ctx.strokeStyle = '#000000cc';
       ctx.strokeText(str, n.x, n.y);
-      ctx.fillStyle = n.crit ? PAL.gold : '#ffffff';
+      ctx.fillStyle = n.foe ? '#ff5a6a' : (n.crit ? PAL.gold : '#ffffff');
       ctx.fillText(str, n.x, n.y);
       ctx.globalAlpha = 1;
     }
@@ -665,6 +781,19 @@ export class Combat {
       panel(ctx, AR.x + 40, 200, AR.w - 80, 56, {});
       text(ctx, this.banner, AR.x + AR.w / 2, 220, { align: 'center', size: 18, bold: true, color: PAL.gold });
       ctx.globalAlpha = 1;
+    }
+
+    // guia dos lados de controle (aparece enquanto os dedos estão na tela)
+    if (this.cfg.modo === 'split' && this.game.touches && this.game.touches.size) {
+      const moveEsq = !this.cfg.canhoto;
+      for (const t of this.game.touches.values()) {
+        const naEsq = t.startX < W / 2;
+        const ehMove = naEsq === moveEsq;
+        ctx.strokeStyle = ehMove ? '#7ce8d066' : '#f5c56a66';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(t.x, t.y, 22, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1;
+      }
     }
 
     ctx.restore();
@@ -689,10 +818,10 @@ export class Combat {
     ctx.globalAlpha = 1;
   }
 
-  // retícula de mira sobre o alvo automático
-  drawReticle(ctx, x, y) {
+  // retícula de mira (dourada quando o jogador está mirando manualmente)
+  drawReticle(ctx, x, y, manual) {
     const r = 13, t = this.game.time * 2;
-    ctx.strokeStyle = '#ffffffcc'; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = manual ? PAL.gold : '#ffffffcc'; ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let i = 0; i < 4; i++) {
       const a0 = t + i * Math.PI / 2 + 0.35, a1 = a0 + 0.7;
@@ -807,9 +936,11 @@ export class Combat {
 
   renderPause(ctx) {
     ctx.fillStyle = '#000000aa'; ctx.fillRect(0, 0, W, H);
-    panel(ctx, W / 2 - 150, 170, 300, 200);
-    text(ctx, 'PAUSA', W / 2, 190, { align: 'center', size: 22, bold: true, color: PAL.gold });
-    if (button(this.game, ctx, 'resume', 'Continuar', W / 2 - 110, 236, 220, 38)) this.state = 'play';
-    if (button(this.game, ctx, 'giveup', 'Abandonar run', W / 2 - 110, 286, 220, 38)) { this.state = 'over'; this.overT = 0.1; }
+    panel(ctx, W / 2 - 190, 96, 380, 350);
+    text(ctx, 'PAUSA', W / 2, 112, { align: 'center', size: 22, bold: true, color: PAL.gold });
+    // controles editáveis durante a partida
+    drawControlOptions(this.game, ctx, W / 2 - 165, 150, 330, this.cfg);
+    if (button(this.game, ctx, 'resume', 'Continuar', W / 2 - 165, 344, 330, 38)) this.state = 'play';
+    if (button(this.game, ctx, 'giveup', 'Abandonar run', W / 2 - 165, 392, 330, 34, { size: 12 })) { this.state = 'over'; this.overT = 0.1; }
   }
 }
