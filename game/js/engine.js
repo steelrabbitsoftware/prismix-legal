@@ -38,7 +38,14 @@ export class Game {
       return { x: (cx - r.left) * (W / r.width), y: (cy - r.top) * (H / r.height) };
     };
     const down = (e) => { const p = toLogical(e); this.pointer.x = p.x; this.pointer.y = p.y; this.pointer.down = true; this.pointer.justDown = true; e.preventDefault(); };
-    const move = (e) => { const p = toLogical(e); this.pointer.x = p.x; this.pointer.y = p.y; };
+    const move = (e) => {
+      const p = toLogical(e);
+      if (this.pointer.down) {           // arrasto relativo (controle mobile)
+        this.pointer.moveDX = (this.pointer.moveDX || 0) + (p.x - this.pointer.x);
+        this.pointer.moveDY = (this.pointer.moveDY || 0) + (p.y - this.pointer.y);
+      }
+      this.pointer.x = p.x; this.pointer.y = p.y;
+    };
     const up = (e) => { this.pointer.down = false; this.pointer.justUp = true; };
     c.addEventListener('mousedown', down); c.addEventListener('mousemove', move);
     window.addEventListener('mouseup', up);
@@ -72,6 +79,7 @@ export class Game {
       this.scene.render(this.ctx);
     }
     this.pointer.justDown = false; this.pointer.justUp = false;
+    this.pointer.moveDX = 0; this.pointer.moveDY = 0;
     this.justKeys.clear();
   }
 }

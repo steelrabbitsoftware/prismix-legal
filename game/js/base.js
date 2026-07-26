@@ -101,8 +101,22 @@ export class Base {
       ctx.strokeRect(px + 0.5, py + 0.5, TS - 1, TS - 1);
       const b = this.buildingAt(x, y);
       if (b) {
-        drawSprite(ctx, BUILDINGS[b.tipo].spr, px + TS / 2, py + TS / 2, 4);
-        if (b.nivel > 1) text(ctx, 'nv.' + b.nivel, px + TS - 4, py + 2, { align: 'right', size: 10, color: PAL.gold });
+        // construções evoluem visualmente com o nível: crescem e ganham ornamentos
+        const esc = b.nivel >= 5 ? 5 : b.nivel >= 3 ? 4 : 3;
+        if (b.nivel >= 3) {   // base de pedra a partir do nv.3
+          ctx.fillStyle = '#6b5f4a'; ctx.fillRect(px + 6, py + TS - 14, TS - 12, 8);
+          ctx.fillStyle = '#8a7d63'; ctx.fillRect(px + 6, py + TS - 14, TS - 12, 3);
+        }
+        if (b.nivel >= 5) {   // aura dourada no nível máximo visual
+          ctx.fillStyle = '#f5c56a22';
+          ctx.beginPath(); ctx.arc(px + TS / 2, py + TS / 2, TS * 0.46, 0, Math.PI * 2); ctx.fill();
+        }
+        drawSprite(ctx, BUILDINGS[b.tipo].spr, px + TS / 2, py + TS / 2 - (b.nivel >= 3 ? 3 : 0), esc);
+        // estrelas de nível
+        for (let i = 0; i < Math.min(5, b.nivel); i++) {
+          ctx.fillStyle = PAL.gold;
+          ctx.fillRect(px + TS - 7 - i * 6, py + 3, 4, 4);
+        }
         // pronto para colher?
         if (b.acumulado && Object.values(b.acumulado).some(v => v >= 1)) {
           const t = Math.sin(g.time * 5) > 0;

@@ -2,7 +2,7 @@
 import { W, H, PAL, panel, text, button, bar, rnd, irnd, pick, clamp, dist2, fmt } from './engine.js';
 import { drawSprite, ballSprite, shade } from './sprites.js';
 import { BALLS, FUSIONS, ENEMIES, BIOMES, waveSpec, derive } from './data.js';
-import { sfx } from './audio.js';
+import { sfx, buzz } from './audio.js';
 import * as SAVE from './save.js';
 
 const AR = { x: 252, y: 6, w: 456, h: 528 };       // arena
@@ -107,7 +107,7 @@ export class Combat {
       type, ...E, hp, maxHp: hp,
       x: boss ? AR.x + AR.w / 2 : colX(col),
       y: -30, phase0: rnd(Math.PI * 2),
-      conds: {}, hitT: 0,
+      conds: {}, hitT: 0, spawnT: 1.6,
     });
   }
 
@@ -127,21 +127,23 @@ export class Combat {
     this.shake = Math.max(0, this.shake - dt * 30);
     if (this.bannerT > 0) this.bannerT -= dt;
 
-    // herói: movimento livre pela arena inteira (teclado ou arrastar)
+    // herói: teclado OU arrasto relativo (padrão mobile — o dedo nunca cobre o herói)
     let mx = 0, my = 0;
     if (g.key('ArrowLeft') || g.key('KeyA')) mx -= 1;
     if (g.key('ArrowRight') || g.key('KeyD')) mx += 1;
     if (g.key('ArrowUp') || g.key('KeyW')) my -= 1;
     if (g.key('ArrowDown') || g.key('KeyS')) my += 1;
-    if (mx === 0 && my === 0 && g.pointer.down) {
-      const dx = g.pointer.x - this.x, dy = g.pointer.y - this.y;
-      const l = Math.hypot(dx, dy);
-      if (l > 14) { mx = dx / l; my = dy / l; }
-    }
-    const ml = Math.hypot(mx, my) || 1;
     const spd = this.d.moveSpd * this.bonus.move * dt;
-    this.x = clamp(this.x + (mx / ml) * spd, PB.x + 14, PB.x + PB.w - 14);
-    this.y = clamp(this.y + (my / ml) * spd, AR.y + 50, AR.y + AR.h - 18);
+    if (mx || my) {
+      const ml = Math.hypot(mx, my);
+      this.x += (mx / ml) * spd; this.y += (my / ml) * spd;
+    } else if (g.pointer.down) {
+      // 1 px de arrasto = 1,6 px de movimento do herói
+      this.x += (g.pointer.moveDX || 0) * 1.6;
+      this.y += (g.pointer.moveDY || 0) * 1.6;
+    }
+    this.x = clamp(this.x, PB.x + 14, PB.x + PB.w - 14);
+    this.y = clamp(this.y, AR.y + 50, AR.y + AR.h - 18);
 
     // disparo
     this.fireT += dt;
@@ -176,13 +178,25 @@ export class Combat {
     this.nums = this.nums.filter(n => n.t > 0);
   }
 
+  // alvo automático: inimigo mais próximo (a retícula mostra quem está na mira)
+  target() {
+    let best = null, bd = Infinity;
+    for (const e of this.enemies) {
+      if (e.hp <= 0 || e.y < AR.y) continue;
+      const d = dist2(e.x, e.y, this.x, this.y);
+      if (d < bd) { bd = d; best = e; }
+    }
+    return best;
+  }
+
   aimDir() {
-    const g = this.game;
-    let dx = g.pointer.x - this.x, dy = g.pointer.y - this.y;
-    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) { dx = 0; dy = -1; }
-    if (dy > -0.1 && Math.abs(dx) < 30) dy = -20; // nunca mira em si mesmo
-    const len = Math.hypot(dx, dy) || 1;
-    return { x: dx / len, y: dy / len };
+    const t = this.target();
+    if (t) {
+      const dx = t.x - this.x, dy = t.y - this.y;
+      const l = Math.hypot(dx, dy) || 1;
+      return { x: dx / l, y: dy / l };
+    }
+    return { x: 0, y: -1 };
   }
 
   fireBall() {
@@ -194,27 +208,14 @@ export class Combat {
         const B = BALLS[s.type];
         const dir = this.aimDir();
         let ang = Math.atan2(dir.y, dir.x);
-        // mira assistida: corrige 35% em direção ao inimigo vivo mais próximo
-        let best = null, bd = Infinity;
-        for (const e of this.enemies) {
-          if (e.hp <= 0 || e.y < AR.y) continue;
-          const d = dist2(e.x, e.y, this.x, this.y);
-          if (d < bd) { bd = d; best = e; }
-        }
-        if (best) {
-          const ta = Math.atan2(best.y - this.y, best.x - this.x);
-          let diff = ta - ang;
-          while (diff > Math.PI) diff -= Math.PI * 2;
-          while (diff < -Math.PI) diff += Math.PI * 2;
-          ang += diff * 0.35;
-        }
-        ang += rnd(-0.09, 0.09); // dispersão natural: evita coluna única
+        ang += rnd(-0.10, 0.10); // dispersão natural: evita coluna única
         if (this.char.spread) ang += rnd(-this.char.spread, this.char.spread);
         const v = B.vel * this.d.ballVel * this.bonus.vel;
         this.balls.push({
           slot: s, type: s.type, x: this.x, y: this.y - 8,
           vx: Math.cos(ang) * v, vy: Math.sin(ang) * v,
           r: B.fusion ? 8 : 6.5, pierce: this.char.pierce || 0, bounces: 0,
+          trail: [],
         });
         s.inFlight++;
         const st = this.stats[s.type] || (this.stats[s.type] = { lanc: 0, dano: 0 });
@@ -229,6 +230,10 @@ export class Combat {
     const rm = [];
     for (const b of this.balls) {
       b.x += b.vx * dt; b.y += b.vy * dt;
+      if (b.trail) {                       // rastro pontilhado
+        b.trail.push(b.x, b.y);
+        if (b.trail.length > 16) b.trail.splice(0, 2);
+      }
       if (b.x < PB.x + b.r) { b.x = PB.x + b.r; b.vx = Math.abs(b.vx); b.bounces++; }
       if (b.x > PB.x + PB.w - b.r) { b.x = PB.x + PB.w - b.r; b.vx = -Math.abs(b.vx); b.bounces++; }
       if (b.y < AR.y + b.r) { b.y = AR.y + b.r; b.vy = Math.abs(b.vy); b.bounces++; }
@@ -349,6 +354,7 @@ export class Combat {
     for (const e of this.enemies) {
       if (e.hp <= 0) { rm.push(e); continue; }
       e.hitT = Math.max(0, e.hitT - dt);
+      e.spawnT = Math.max(0, e.spawnT - dt);
       // formação em grade: todos descem juntos na mesma velocidade
       let spd = e.boss ? e.spd * (1 + this.wave * 0.02) : this.rowSpeed;
       const c = e.conds;
@@ -378,7 +384,7 @@ export class Combat {
     this.hp -= dmg;
     this.invulnT = 0.7;
     this.shake = 6;
-    sfx.hurt();
+    sfx.hurt(); buzz(60);
     if (this.hp <= 0) { this.hp = 0; this.state = 'over'; this.overT = 1.4; sfx.lose(); }
   }
 
@@ -430,7 +436,7 @@ export class Combat {
 
   // ---------------- level up ----------------
   openLevelUp() {
-    sfx.levelup();
+    sfx.levelup(); buzz([30, 40, 30]);
     this.state = 'levelup';
     this.rerolls = 1;
     this.cards = this.genCards();
@@ -500,7 +506,7 @@ export class Combat {
       this.slots[keep] = { type: c.f.out, level: 1, count, inFlight: 0 };
       // remove bolas em voo dos tipos fundidos
       this.balls = this.balls.filter(b => b.frag || (b.slot && this.slots.includes(b.slot)));
-      sfx.fusion();
+      sfx.fusion(); buzz([40, 30, 40, 30, 90]);
       this.setBanner(`FUSÃO! ${BALLS[c.f.out].nome}`);
     }
     else if (c.kind === 'new') this.slots.push({ type: c.t, level: 1, count: 1, inFlight: 0 });
@@ -576,8 +582,9 @@ export class Combat {
     // drops
     for (const d of this.drops) drawSprite(ctx, d.kind, d.x, d.y, 2);
 
-    // inimigos
+    // inimigos: a plataforma de nascimento marca a formação e desvanece
     for (const e of this.enemies) {
+      if (!e.boss && e.spawnT > 0) this.drawSpawnPad(ctx, e.x, e.y + 14, e.spawnT);
       if (e.hitT > 0) { ctx.globalAlpha = 0.7; }
       drawSprite(ctx, e.spr, e.x, e.y, e.scale);
       ctx.globalAlpha = 1;
@@ -593,21 +600,34 @@ export class Combat {
       }
     }
 
-    // esferas
+    // esferas com rastro pontilhado
     for (const b of this.balls) {
-      const img = ballSprite(BALLS[b.type].cor, b.r);
+      const cor = BALLS[b.type].cor;
+      if (b.trail) {
+        for (let i = 0; i < b.trail.length; i += 2) {
+          const f = (i / 2) / (b.trail.length / 2);
+          ctx.globalAlpha = f * 0.5;
+          ctx.fillStyle = cor;
+          const s = 1 + f * 2;
+          ctx.fillRect(b.trail[i] - s / 2, b.trail[i + 1] - s / 2, s, s);
+        }
+        ctx.globalAlpha = 1;
+      }
+      const img = ballSprite(cor, b.r);
       ctx.drawImage(img, b.x - img.width / 2, b.y - img.height / 2);
     }
 
     // herói (pisca quando invulnerável)
     if (!(this.invulnT > 0 && Math.floor(this.game.time * 14) % 2 === 0))
       drawSprite(ctx, this.char.spr, this.x, this.y, 2);
-    // mira
-    const dir = this.aimDir();
-    ctx.strokeStyle = '#ffffff33'; ctx.setLineDash([3, 7]);
-    ctx.beginPath(); ctx.moveTo(this.x, this.y - 8);
-    ctx.lineTo(this.x + dir.x * 90, this.y - 8 + dir.y * 90); ctx.stroke();
-    ctx.setLineDash([]);
+    // retícula sobre o alvo automático + linha de mira
+    const alvo = this.target();
+    if (alvo) {
+      ctx.strokeStyle = '#ffffff2e'; ctx.setLineDash([3, 7]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(this.x, this.y - 8); ctx.lineTo(alvo.x, alvo.y); ctx.stroke();
+      ctx.setLineDash([]);
+      this.drawReticle(ctx, alvo.x, alvo.y);
+    }
 
     // partículas
     for (const p of this.parts) {
@@ -618,9 +638,19 @@ export class Combat {
         ctx.fillStyle = p.col; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
       }
     }
-    // números de dano
-    for (const n of this.nums)
-      text(ctx, String(n.v), n.x, n.y, { size: n.crit ? 14 : 11, bold: n.crit, color: n.crit ? PAL.gold : '#fff', align: 'center' });
+    // números de dano com contorno (legíveis sobre qualquer fundo)
+    for (const n of this.nums) {
+      const s = n.crit ? 17 : 12;
+      ctx.font = `bold ${s}px "Courier New", monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.globalAlpha = Math.min(1, n.t * 2.2);
+      const str = n.crit ? n.v + '!' : String(n.v);
+      ctx.lineWidth = 3; ctx.strokeStyle = '#000000cc';
+      ctx.strokeText(str, n.x, n.y);
+      ctx.fillStyle = n.crit ? PAL.gold : '#ffffff';
+      ctx.fillText(str, n.x, n.y);
+      ctx.globalAlpha = 1;
+    }
 
     // barra de chefe
     const boss = this.enemies.find(e => e.boss);
@@ -646,6 +676,34 @@ export class Combat {
       ctx.fillRect(0, 0, W, H);
       text(ctx, this.state === 'won' ? 'ABISMO SELADO!' : 'VOCÊ CAIU...', W / 2, H / 2 - 20, { align: 'center', size: 32, bold: true, color: this.state === 'won' ? PAL.gold : PAL.hp });
     }
+  }
+
+  // plataforma de nascimento: revela a formação em grade e some
+  drawSpawnPad(ctx, x, y, t) {
+    const a = Math.min(1, t / 1.6) * 0.55;
+    ctx.globalAlpha = a;
+    ctx.fillStyle = '#6b4a33'; ctx.fillRect(x - 15, y - 5, 30, 11);
+    ctx.fillStyle = '#8a6f4a'; ctx.fillRect(x - 15, y - 5, 30, 3);
+    ctx.strokeStyle = '#3a2617'; ctx.lineWidth = 1;
+    ctx.strokeRect(x - 14.5, y - 4.5, 29, 10);
+    ctx.globalAlpha = 1;
+  }
+
+  // retícula de mira sobre o alvo automático
+  drawReticle(ctx, x, y) {
+    const r = 13, t = this.game.time * 2;
+    ctx.strokeStyle = '#ffffffcc'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const a0 = t + i * Math.PI / 2 + 0.35, a1 = a0 + 0.7;
+      ctx.moveTo(x + Math.cos(a0) * r, y + Math.sin(a0) * r);
+      ctx.arc(x, y, r, a0, a1);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - 5, y); ctx.lineTo(x + 5, y);
+    ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 5);
+    ctx.stroke();
   }
 
   // decorações de natureza das faixas laterais

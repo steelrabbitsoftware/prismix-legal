@@ -42,6 +42,9 @@ function noise(dur, vol = 0.3) {
   } catch (e) { /* áudio indisponível */ }
 }
 
+// vibração háptica (mobile)
+export function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* sem haptics */ } }
+
 export const sfx = {
   shoot: () => tone(420, 0.06, 'square', 0.12, -180),
   hit: () => tone(180, 0.05, 'square', 0.18, -60),
