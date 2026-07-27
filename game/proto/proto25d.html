@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Travel Heros — 2D × 2.5D</title>
+<style>
+  body { margin:0; background:#0e0716; color:#f3e6ff; font-family:"Courier New",monospace; }
+  #wrap { display:flex; justify-content:center; padding:8px; }
+  canvas { image-rendering:pixelated; }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c" width="1000" height="560"></canvas></div>
+<script type="module">
+import { drawSprite, ballSprite } from '../js/sprites.js';
+
+const c = document.getElementById('c'), g = c.getContext('2d');
+g.imageSmoothingEnabled = false;
+
+// mesma "cena lógica" desenhada dos dois jeitos:
+// grade de inimigos (6 colunas × 4 fileiras), herói embaixo, esferas com rastro
+const COLS = 6, ROWS = 4;
+const foes = [];
+for (let r = 0; r < ROWS; r++)
+  for (let col = 0; col < COLS; col++)
+    if ((r * 7 + col * 3) % 5 !== 0)
+      foes.push({ col, row: r, spr: ['slime','morcego','caveira','aranha'][(r + col) % 4] });
+const hero = { col: 2.5, t: 0.93 };
+const balls = [
+  { wx: -0.15, t: 0.62, cor: '#e8e8ff' }, { wx: 0.32, t: 0.44, cor: '#ff7a3c' },
+  { wx: -0.42, t: 0.30, cor: '#6fd0ff' }, { wx: 0.08, t: 0.75, cor: '#ffe04a' },
+];
+
+// ---------- painel 1: 2D plano (o que temos hoje) ----------
+function draw2D(x0, y0, w, h) {
+  g.save(); g.beginPath(); g.rect(x0, y0, w, h); g.clip();
+  g.fillStyle = '#14231b'; g.fillRect(x0, y0, w, h);
+  const strip = 34;
+  g.fillStyle = '#16301f'; g.fillRect(x0, y0, strip, h); g.fillRect(x0 + w - strip, y0, strip, h);
+  const px = x0 + strip, pw = w - strip * 2;
+  for (const f of foes) {
+    const fx = px + (pw / COLS) * (f.col + 0.5);
+    const fy = y0 + 40 + f.row * 52;
+    g.globalAlpha = 0.5; g.fillStyle = '#6b4a33';
+    g.fillRect(fx - 15, fy + 9, 30, 11); g.globalAlpha = 1;
+    drawSprite(g, f.spr, fx, fy, 3);
+  }
+  for (const b of balls) {
+    const bx = px + pw / 2 + b.wx * pw / 2, by = y0 + h * (1 - b.t);
+    for (let i = 0; i < 6; i++) { g.globalAlpha = 0.35 - i * 0.05; g.fillStyle = b.cor; g.fillRect(bx - 1 + i * 2, by + 8 + i * 7, 2, 2); }
+    g.globalAlpha = 1;
+    const img = ballSprite(b.cor, 7); g.drawImage(img, bx - img.width / 2, by - img.height / 2);
+  }
+  const hx = px + (pw / COLS) * (hero.col + 0.5), hy = y0 + h * (1 - hero.t);
+  drawSprite(g, 'guerreiro', hx, hy, 2);
+  g.restore();
+  g.strokeStyle = '#9c5f8a'; g.lineWidth = 2; g.strokeRect(x0 + 1, y0 + 1, w - 2, h - 2);
+}
+
+// ---------- painel 2: 2.5D com perspectiva ----------
+// projeção: t=0 (fundo, longe) → t=1 (frente, perto)
+const PMIN = 0.42;                      // largura relativa do corredor lá no fundo
+const persp = (t) => PMIN + (1 - PMIN) * t;
+function proj(t, wx, x0, y0, w, h) {
+  const s = persp(t);
+  const yy = y0 + 30 + (h - 60) * Math.pow(t, 1.35);
+  return { x: x0 + w / 2 + wx * (w * 0.40) * s, y: yy, s };
+}
+
+function draw25D(x0, y0, w, h) {
+  g.save(); g.beginPath(); g.rect(x0, y0, w, h); g.clip();
+  // céu/fundo do abismo
+  const sky = g.createLinearGradient(0, y0, 0, y0 + h);
+  sky.addColorStop(0, '#0b1410'); sky.addColorStop(1, '#1c2d20');
+  g.fillStyle = sky; g.fillRect(x0, y0, w, h);
+
+  // chão em trapézio (a estrada indo ao horizonte)
+  const far = proj(0, 0, x0, y0, w, h), near = proj(1, 0, x0, y0, w, h);
+  const fw = (w * 0.40) * persp(0), nw = (w * 0.40) * persp(1);
+  const road = g.createLinearGradient(0, far.y, 0, near.y);
+  road.addColorStop(0, '#2b3d2a'); road.addColorStop(1, '#4b6b41');
+  g.fillStyle = road;
+  g.beginPath();
+  g.moveTo(far.x - fw, far.y); g.lineTo(far.x + fw, far.y);
+  g.lineTo(near.x + nw, near.y + 30); g.lineTo(near.x - nw, near.y + 30);
+  g.closePath(); g.fill();
+
+  // faixas da estrada (sensação de avanço)
+  g.fillStyle = '#ffffff12';
+  for (let i = 0; i < 9; i++) {
+    const t1 = i / 9, t2 = t1 + 0.035;
+    const a = proj(t1, 0, x0, y0, w, h), b = proj(t2, 0, x0, y0, w, h);
+    g.beginPath();
+    g.moveTo(a.x - 2 * a.s, a.y); g.lineTo(a.x + 2 * a.s, a.y);
+    g.lineTo(b.x + 3 * b.s, b.y); g.lineTo(b.x - 3 * b.s, b.y);
+    g.closePath(); g.fill();
+  }
+
+  // paredes laterais em perspectiva (o "bioma")
+  for (const lado of [-1, 1]) {
+    g.fillStyle = '#16301f';
+    g.beginPath();
+    g.moveTo(far.x + lado * fw, far.y);
+    g.lineTo(x0 + (lado < 0 ? 0 : w), far.y - 6);
+    g.lineTo(x0 + (lado < 0 ? 0 : w), y0 + h);
+    g.lineTo(near.x + lado * nw, near.y + 30);
+    g.closePath(); g.fill();
+    // pinheiros escalando com a distância
+    for (let i = 0; i < 9; i++) {
+      const t = 0.04 + i * 0.115;
+      const p = proj(t, lado * 1.22, x0, y0, w, h);
+      const s = p.s * 1.15;
+      g.fillStyle = '#3a2617'; g.fillRect(p.x - 2 * s, p.y + 6 * s, 4 * s, 9 * s);
+      g.fillStyle = '#2c5e3a';
+      g.beginPath(); g.moveTo(p.x, p.y - 16 * s); g.lineTo(p.x - 11 * s, p.y + 3 * s); g.lineTo(p.x + 11 * s, p.y + 3 * s); g.fill();
+      g.fillStyle = '#37714a';
+      g.beginPath(); g.moveTo(p.x, p.y - 6 * s); g.lineTo(p.x - 13 * s, p.y + 9 * s); g.lineTo(p.x + 13 * s, p.y + 9 * s); g.fill();
+    }
+  }
+
+  // inimigos: mais longe = menores e mais altos na tela
+  const ordenado = [...foes].sort((a, b) => a.row - b.row);
+  for (const f of ordenado) {
+    const t = 0.10 + (ROWS - 1 - f.row) * 0.135;
+    const wx = (f.col + 0.5) / COLS * 2 - 1;
+    const p = proj(t, wx, x0, y0, w, h);
+    const esc = 3 * p.s;
+    // sombra no chão
+    g.globalAlpha = 0.35; g.fillStyle = '#000';
+    g.beginPath(); g.ellipse(p.x, p.y + 14 * p.s, 16 * p.s, 5 * p.s, 0, 0, Math.PI * 2); g.fill();
+    g.globalAlpha = 1;
+    drawSprite(g, f.spr, p.x, p.y, Math.max(1, Math.round(esc)));
+  }
+
+  // esferas com rastro em perspectiva
+  for (const b of balls) {
+    const p = proj(b.t, b.wx, x0, y0, w, h);
+    for (let i = 0; i < 7; i++) {
+      const tt = Math.max(0, b.t - i * 0.03);
+      const q = proj(tt, b.wx + i * 0.012, x0, y0, w, h);
+      g.globalAlpha = 0.4 - i * 0.05; g.fillStyle = b.cor;
+      const s = 2 * q.s; g.fillRect(q.x - s / 2, q.y - s / 2, s, s);
+    }
+    g.globalAlpha = 1;
+    const img = ballSprite(b.cor, Math.max(3, 7 * p.s));
+    g.drawImage(img, p.x - img.width / 2, p.y - img.height / 2);
+  }
+
+  // herói
+  const hp = proj(hero.t, (hero.col + 0.5) / COLS * 2 - 1, x0, y0, w, h);
+  g.globalAlpha = 0.4; g.fillStyle = '#000';
+  g.beginPath(); g.ellipse(hp.x, hp.y + 12, 15, 5, 0, 0, Math.PI * 2); g.fill();
+  g.globalAlpha = 1;
+  drawSprite(g, 'guerreiro', hp.x, hp.y, 3);
+
+  // vinheta para dar profundidade
+  const vig = g.createRadialGradient(x0 + w / 2, y0 + h * 0.55, h * 0.25, x0 + w / 2, y0 + h * 0.55, h * 0.85);
+  vig.addColorStop(0, '#00000000'); vig.addColorStop(1, '#000000aa');
+  g.fillStyle = vig; g.fillRect(x0, y0, w, h);
+
+  g.restore();
+  g.strokeStyle = '#f5c56a'; g.lineWidth = 2; g.strokeRect(x0 + 1, y0 + 1, w - 2, h - 2);
+}
+
+function label(txt, x, y, cor) {
+  g.font = 'bold 15px "Courier New", monospace'; g.textAlign = 'center';
+  g.fillStyle = '#000'; g.fillText(txt, x + 1, y + 1);
+  g.fillStyle = cor; g.fillText(txt, x, y);
+}
+
+g.fillStyle = '#0e0716'; g.fillRect(0, 0, 1000, 560);
+draw2D(10, 34, 470, 510);
+draw25D(520, 34, 470, 510);
+label('2D PLANO (hoje)', 245, 24, '#b9a0d0');
+label('2.5D COM PERSPECTIVA (proposta)', 755, 24, '#f5c56a');
+window.__pronto = true;
+</script>
+</body>
+</html>
