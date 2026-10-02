@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PRISMIX: jogo de blocos grátis para relaxar</title>
+  <meta name="description" content="Encaixe as peças, faça combos e zere o tabuleiro. 100 fases, 19 estilos de blocos e funciona offline. Grátis na Google Play." />
+  <meta property="og:title" content="PRISMIX: você zera esse tabuleiro?" />
+  <meta property="og:description" content="Jogo de blocos grátis para relaxar. 100 fases, 19 estilos e funciona offline." />
+  <meta property="og:image" content="https://steelrabbitsoftware.github.io/prismix-legal/baixar/poster.jpg" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="icone.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root { color-scheme: dark; --roxo: #7c4dff; --rosa: #ff4fd0; --ciano: #38c8ff; --amarelo: #ffcc2e; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: #f2eeff; font-family: "Nunito", system-ui, sans-serif;
+      background: radial-gradient(900px 700px at 50% -10%, #3a1f7a 0%, #1a0f2e 55%, #0d0718 100%);
+      min-height: 100vh;
+    }
+    main { max-width: 480px; margin: 0 auto; padding: 14px 16px 40px; text-align: center; }
+    .topo { display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .topo img { width: 64px; height: 64px; border-radius: 16px; box-shadow: 0 0 24px rgba(124,77,255,.6); }
+    h1 { margin: 0; font-size: 34px; font-weight: 900; letter-spacing: 3px;
+      background: linear-gradient(90deg, var(--ciano), var(--rosa)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .gancho { font-size: 26px; font-weight: 900; margin: 12px 0 4px; color: var(--amarelo); text-shadow: 0 3px 0 #3a0a4a; }
+    .sub { margin: 0 0 12px; color: #c9bfff; font-weight: 700; }
+    .video { width: 100%; max-width: 230px; max-height: 46vh; aspect-ratio: 9 / 16; border-radius: 22px; border: 3px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 50px rgba(0,0,0,.55), 0 0 40px rgba(124,77,255,.35); background: #120a24; display: block; margin: 0 auto; object-fit: cover; }
+    .botao {
+      display: block; margin: 14px auto 6px; max-width: 360px; padding: 18px 20px; border-radius: 18px;
+      text-decoration: none; color: #1a0f2e; font-size: 21px; font-weight: 900;
+      background: linear-gradient(180deg, #ffe26b, #ffb300); box-shadow: 0 6px 0 #b36b00, 0 10px 30px rgba(255,179,0,.35);
+      animation: pulsa 1.6s ease-in-out 6;
+    }
+    .botao:active { transform: translateY(4px); box-shadow: 0 2px 0 #b36b00; }
+    @keyframes pulsa { 50% { transform: scale(1.04); } }
+    .nota { font-size: 13px; color: #a89fd0; margin: 0 0 22px; }
+    .fatos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 6px 0 22px; }
+    .fato { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 12px 6px; }
+    .fato b { display: block; font-size: 24px; font-weight: 900; color: var(--ciano); }
+    .fato span { font-size: 13px; color: #d6ceff; font-weight: 700; }
+    .telas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 22px; }
+    .telas img { width: 100%; border-radius: 14px; border: 2px solid rgba(255,255,255,.1); }
+    h2 { font-size: 20px; margin: 4px 0 10px; }
+    ul { text-align: left; margin: 0 auto 8px; padding: 0 0 0 20px; max-width: 380px; line-height: 1.6; font-weight: 700; color: #e6e0ff; }
+    footer { margin-top: 26px; font-size: 12px; color: #8a80b8; }
+    footer a { color: #b9a8ff; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topo"><img src="icone.png" alt="Ícone do PRISMIX" /><h1>PRISMIX</h1></div>
+    <p class="gancho">Você zera esse tabuleiro?</p>
+    <p class="sub">Encaixe as peças, faça combos e limpe tudo de uma vez.</p>
+    <video class="video" src="video.mp4" poster="poster.jpg" autoplay muted loop playsinline></video>
+    <a class="botao" id="baixar" href="https://play.google.com/store/apps/details?id=br.com.prismix.app&amp;referrer=utm_source%3Dmeta-ads%26utm_medium%3Dpaid%26utm_campaign%3Dzera-tabuleiro">Baixar grátis na Google Play</a>
+    <p class="nota">Android. Grátis. Funciona sem internet.</p>
+    <div class="fatos">
+      <div class="fato"><b>100</b><span>fases</span></div>
+      <div class="fato"><b>19</b><span>estilos de blocos</span></div>
+      <div class="fato"><b>x5</b><span>combos em cadeia</span></div>
+    </div>
+    <div class="telas">
+      <img src="tela-3.5.jpg" alt="Tabuleiro cheio de blocos coloridos" loading="lazy" />
+      <img src="tela-7.6.jpg" alt="Combo limpando linhas" loading="lazy" />
+      <img src="tela-13.3.jpg" alt="Prisma perfeito zerando o tabuleiro" loading="lazy" />
+    </div>
+    <h2>Por que jogar</h2>
+    <ul>
+      <li>Partidas rápidas para relaxar no ônibus ou na fila.</li>
+      <li>Limpe várias linhas de uma vez e faça o prisma perfeito.</li>
+      <li>Desafio do dia, medalhas e 100 fases para avançar.</li>
+      <li>Joga offline, sem precisar de internet.</li>
+    </ul>
+    <a class="botao" href="https://play.google.com/store/apps/details?id=br.com.prismix.app&amp;referrer=utm_source%3Dmeta-ads%26utm_medium%3Dpaid%26utm_campaign%3Dzera-tabuleiro">Baixar grátis</a>
+    <footer>
+      Steel Rabbit Software · <a href="../privacidade.html">Privacidade</a> · <a href="../termos.html">Termos</a>
+    </footer>
+  </main>
+</body>
+</html>
