@@ -3,132 +3,395 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
   <title>PRISMIX — Política de Privacidade</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 0 auto;
-           padding: 24px; line-height: 1.6; color: #222; }
-    h1 { font-size: 26px; } h2 { font-size: 19px; margin-top: 28px; }
-    .updated { color: #777; font-size: 14px; }
-    table { border-collapse: collapse; width: 100%; font-size: 14px; }
-    td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .box { background: #f4f6f8; border-radius: 8px; padding: 14px 16px; }
+    /* Tema escuro premium, legível em qualquer aparelho. Antes o texto era escuro
+       SEM cor de fundo → sumia no modo escuro do celular. */
+    html { color-scheme: dark;
+      background:
+        radial-gradient(120% 80% at 12% 0%, rgba(176,107,255,0.22), transparent 55%),
+        radial-gradient(120% 90% at 92% 100%, rgba(61,169,255,0.16), transparent 55%),
+        linear-gradient(165deg, #12101f, #1a1430);
+      background-attachment: fixed; min-height: 100%; }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      max-width: 720px; margin: 0 auto; min-height: 100vh;
+      padding: 30px 20px calc(44px + env(safe-area-inset-bottom));
+      line-height: 1.65; color: #ddd9ef; background: transparent; }
+    h1 { font-size: 25px; line-height: 1.2; margin: 0 0 6px; font-weight: 800;
+      background: linear-gradient(90deg,#ff6ba6,#ffd23d,#5ce8a4,#5cb3ff,#b06bff);
+      -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .updated { color: #a49ec6; font-size: 13px; margin: 0 0 22px; }
+    h2 { font-size: 18px; margin: 30px 0 8px; color: #ffd23d; }
+    p, li { color: #ddd9ef; font-size: 15px; }
+    b, strong { color: #ffffff; }
+    a { color: #7cc4ff; text-decoration: underline; text-underline-offset: 2px; }
+    ul { padding-left: 20px; } li { margin: 5px 0; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em; color: #ffe9a3; background: rgba(255,255,255,0.08);
+      border-radius: 5px; padding: 1px 5px; }
+    .box { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+      border-left: 4px solid #ffd23d; border-radius: 12px; padding: 14px 16px; font-size: 15px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 8px 0; }
+    td, th { border: 1px solid rgba(255,255,255,0.14); padding: 9px 10px; text-align: left; vertical-align: top; }
+    th { background: rgba(255,255,255,0.06); color: #fff; }
+    .wrap { overflow-x: auto; }
   </style>
 </head>
 <body>
   <h1>Política de Privacidade — PRISMIX</h1>
-  <p class="updated">Última atualização: 14 de junho de 2026 · Versão 2.1</p>
+  <p class="updated">Última atualização: 11 de outubro de 2026 · Versão 3.1</p>
 
   <div class="box">
-    <b>Resumo em uma frase:</b> o PRISMIX não cria conta, não pede e-mail e
-    <b>não coleta nem vende dados pessoais</b> — seu progresso fica somente no
-    seu aparelho.
+    <b>Resumo em uma frase:</b> o PRISMIX <b>não cria conta própria</b> e nunca
+    pede seu e-mail ou sua senha, e <b>nunca vende seus dados</b>. Seu progresso
+    fica no aparelho. Mas o app <b>envia dados de uso</b> (partidas jogadas,
+    telas abertas, erros, compras que falharam) para o Google Analytics/Firebase,
+    ligados a um <b>identificador do aparelho</b> — não à sua identidade — e,
+    para conquistas e ranking, <b>conecta-se automaticamente à sua conta do
+    Google Play Jogos</b> quando o app abre. O jogo oferece <b>vídeos de
+    anúncio opcionais</b> (continuar, dobrar o baú, ganhar martelo): eles só
+    tocam quando você escolhe assistir, e são servidos pela <b>Unity</b>, que
+    trata os dados desse anúncio como controladora própria. Esta página explica
+    exatamente o quê, por quê, por quanto tempo e como pedir a exclusão.
   </div>
 
-  <h2>1. Quem somos (Controlador)</h2>
+  <h2>1. Quem somos (Controlador) e quem processa por nós</h2>
   <p>O PRISMIX é desenvolvido e operado pela <b>Steel Rabbit Software</b>
   ("nós"). Para fins da Lei Geral de Proteção de Dados (Lei nº 13.709/2018 —
-  "LGPD"), o controlador de dados é a Steel Rabbit Software, contato:
+  "LGPD"), o <b>controlador</b> é a Steel Rabbit Software, contato:
   <b>techrabit99@gmail.com</b>.</p>
+  <p>Atuam como <b>operadores</b> (art. 5º, VII), tratando dados por nossa conta
+  e conforme nossas instruções: <b>Google LLC / Google Ireland</b>, nos serviços
+  Google Play (loja e cobrança), <b>Firebase Analytics / Google Analytics 4</b>
+  (medição de uso), <b>Google BigQuery</b> (cópia dos dados de medição para
+  análise) e <b>Google Play Jogos</b> (conquistas, ranking e save na nuvem).</p>
+  <p>Os <b>vídeos de anúncio opcionais</b> (seção 4) são servidos pela <b>Unity
+  Technologies</b>, por meio do Unity LevelPlay e do Unity Ads. Para esses
+  anúncios a Unity <b>não é nossa operadora</b>: ela atua como
+  <b>controladora independente</b> dos dados que coleta, conforme a
+  <a href="https://unity.com/legal/game-player-and-app-user-privacy-policy">política
+  de privacidade da Unity para jogadores</a>.</p>
 
   <h2>2. Quais dados tratamos — e quais NÃO tratamos</h2>
+  <div class="wrap">
   <table>
     <tr><th>Dado</th><th>Onde fica</th><th>Para quê</th><th>Base legal (LGPD)</th></tr>
     <tr>
-      <td>Progresso do jogo (pontuação, nível, moedas do jogo, temas,
+      <td>Progresso do jogo (pontuação, moedas do jogo, temas, estilos, itens,
       compras desbloqueadas, configurações)</td>
-      <td><b>Somente no seu aparelho</b> (armazenamento local). Não é enviado
-      para nós — não temos servidores de jogo.</td>
-      <td>Funcionamento do jogo (salvar e continuar partidas)</td>
+      <td><b>Somente no seu aparelho</b> (armazenamento local). Não existe
+      servidor de jogo nosso nem backup na nuvem desse save: se você desinstalar,
+      ele some. A única exceção é o marcador do teste grátis, descrito na última
+      linha desta tabela.</td>
+      <td>Salvar e continuar suas partidas</td>
       <td>Execução de contrato (art. 7º, V)</td>
     </tr>
     <tr>
-      <td>Recibos de compra (quando você compra algo)</td>
-      <td>Processados pelo <b>Google Play</b>; não vemos dados de cartão</td>
-      <td>Entregar o item comprado e permitir restauração</td>
+      <td>Recibos e status de compra/assinatura</td>
+      <td>Processados pelo <b>Google Play</b>. Não vemos número de cartão nem
+      dados bancários.</td>
+      <td>Entregar o item comprado e permitir restaurar a compra</td>
       <td>Execução de contrato (art. 7º, V)</td>
     </tr>
     <tr>
-      <td>Identificador de publicidade do Android (apenas se/quando houver
-      anúncios no app)</td>
-      <td>Tratado pelo <b>Google AdMob</b>, operador de anúncios</td>
-      <td>Exibir anúncios recompensados que você escolhe assistir</td>
-      <td>Legítimo interesse (art. 7º, IX) e/ou consentimento via aviso
-      de consentimento do Google, conforme sua região</td>
+      <td><b>Eventos de uso do jogo</b> — abrir o app, começar e terminar
+      partida (com pontuação e modo de jogo), passos do tutorial, abrir a loja,
+      ofertas exibidas, giros da roleta, cada etapa da compra (clicou, pagou,
+      falhou e por quê), erros de JavaScript e versão do app</td>
+      <td><b>Firebase Analytics / Google Analytics 4</b> (projeto
+      <code>prismix-d3329</code>) e uma <b>cópia diária no Google BigQuery</b>,
+      no nosso próprio projeto</td>
+      <td>Descobrir onde os jogadores travam, corrigir defeitos e melhorar o
+      jogo. <b>Não usamos esses eventos para escolher anúncios nem para montar
+      perfil de publicidade</b> — eles ficam no Google e não são enviados à rede
+      de anúncios.</td>
+      <td>Legítimo interesse (art. 7º, IX), limitado ao mínimo necessário
+      (art. 6º, III)</td>
+    </tr>
+    <tr>
+      <td><b>Identificador do app no aparelho ("App Instance ID")</b> — um código
+      aleatório criado na instalação, que não contém seu nome nem seu e-mail</td>
+      <td>Firebase Analytics / BigQuery</td>
+      <td>Ligar os eventos ao mesmo aparelho, para não contar a mesma pessoa duas
+      vezes e para medir retenção</td>
+      <td>Legítimo interesse (art. 7º, IX)</td>
+    </tr>
+    <tr>
+      <td><b>Identificador de publicidade do Android (AD_ID)</b> — a permissão
+      entra automaticamente junto com o SDK do Firebase Analytics, e o
+      identificador pode ser usado por ele para medir instalações e retenção</td>
+      <td>Firebase Analytics (Google), como operador de <b>medição</b></td>
+      <td>Medir instalação e retenção. O mesmo identificador também é lido pelo
+      SDK da Unity quando o app oferece ou toca um vídeo de anúncio opcional —
+      veja a linha seguinte e a seção 4.</td>
+      <td>Legítimo interesse (art. 7º, IX)</td>
+    </tr>
+    <tr>
+      <td><b>Dados do aparelho e da sessão</b> coletados automaticamente pelo
+      Firebase — modelo do aparelho, sistema operacional e versão, idioma,
+      <b>país/região aproximados deduzidos do endereço IP mascarado</b>, primeira
+      abertura, sessões e remoção do app</td>
+      <td>Firebase Analytics / BigQuery</td>
+      <td>Saber em que aparelhos e em que países o jogo funciona mal. Não é GPS,
+      não é endereço, e o app não pede nenhuma permissão de localização.</td>
+      <td>Legítimo interesse (art. 7º, IX)</td>
+    </tr>
+    <tr>
+      <td><b>Vídeos de anúncio opcionais</b> — endereço IP, identificadores do
+      aparelho (inclusive o identificador de publicidade), dados técnicos do
+      aparelho e a sua interação com o anúncio (se assistiu, se tocou)</td>
+      <td>Servidores da <b>Unity</b> (LevelPlay / Unity Ads), que pode
+      compartilhá-los com anunciantes e empresas de atribuição, conforme a
+      política dela</td>
+      <td>Exibir o vídeo que você escolheu assistir, confirmar que ele foi visto até
+      o fim para entregar a recompensa, e pagar pelo anúncio</td>
+      <td>Para a integração no jogo: legítimo interesse (art. 7º, IX), só quando
+      você toca para assistir. Para o uso pela Unity: a base legal declarada por
+      ela, como controladora</td>
+    </tr>
+    <tr>
+      <td><b>Perfil de jogo</b> — se você é gratuito, está em teste ou é Premium;
+      faixa de partidas jogadas; versão do app</td>
+      <td>Firebase Analytics / BigQuery</td>
+      <td>Medir se o jogo e a economia estão equilibrados para cada perfil</td>
+      <td>Legítimo interesse (art. 7º, IX)</td>
+    </tr>
+    <tr>
+      <td><b>Google Play Jogos</b> — identificador de jogador, nome de jogador
+      (gamertag) e avatar da sua conta Google, conquistas desbloqueadas,
+      pontuações enviadas ao ranking e um pequeno save na nuvem</td>
+      <td>Servidores do <b>Google Play Jogos</b>, ligados à sua conta Google.
+      A conexão é feita <b>automaticamente quando o app abre</b> (comportamento
+      padrão do Play Games Services), sem pedir seu e-mail nem sua senha — o
+      login já existe no aparelho. No ranking, <b>outros jogadores veem seu nome
+      de jogador, avatar e pontuação</b>. Você controla a visibilidade do perfil
+      e pode se desconectar no aplicativo <b>Google Play Jogos</b>.</td>
+      <td>Conquistas e ranking; e um marcador que registra se o teste grátis do
+      Premium já foi usado naquela conta</td>
+      <td>Execução de contrato (art. 7º, V) para conquistas e ranking; legítimo
+      interesse (art. 7º, IX) para o marcador antifraude do teste grátis</td>
+    </tr>
+    <tr>
+      <td>Notificações (lembretes do jogo)</td>
+      <td><b>Somente no seu aparelho</b> — são agendadas localmente, não passam
+      por servidor nenhum e não usam token de push</td>
+      <td>Lembrar você de voltar e avisar o fim do teste grátis</td>
+      <td>Execução de contrato (art. 7º, V); você liga e desliga em ⚙️ Ajustes</td>
     </tr>
   </table>
-  <p><b>Não coletamos:</b> nome, e-mail, telefone, contatos, localização,
-  fotos, microfone, biometria ou qualquer dado sensível. Não há cadastro nem
-  login. Não vendemos nem compartilhamos dados pessoais com terceiros para
-  fins comerciais.</p>
+  </div>
+  <p><b>Não coletamos:</b> nome, e-mail, telefone, contatos, localização precisa
+  (GPS), fotos, vídeos, microfone, arquivos, biometria, histórico de navegação
+  nem qualquer dado sensível. <b>O PRISMIX não cria conta nenhuma</b> e nunca
+  pede e-mail ou senha: o que existe é a conexão automática com a conta do
+  <b>Google Play Jogos</b> que já está no seu aparelho, descrita na tabela acima.
+  <b>Nunca vendemos seus dados.</b> Os dados de uso do jogo são compartilhados
+  apenas com o Google, na condição de operador descrita na seção 1. A única
+  exceção são os <b>vídeos de anúncio opcionais</b>: quando eles são oferecidos
+  ou tocados, o SDK da Unity coleta os dados descritos na tabela acima, para
+  fins de publicidade, como controladora própria (seção 4).</p>
+  <p>Uma observação honesta sobre um caso específico: quando ocorre um erro de
+  programação, enviamos a <b>mensagem técnica do erro</b> (truncada em cerca de
+  100 caracteres) e a tela em que aconteceu. É texto gerado pelo próprio app —
+  o PRISMIX não tem nenhum campo em que você digite algo (não há chat, nome de
+  jogador digitado nem busca), então não há como um dado seu entrar aí.</p>
 
-  <h2>3. Anúncios (Google AdMob)</h2>
-  <p>Quando presentes, os anúncios são <b>recompensados e opcionais</b>: você
-  escolhe assistir em troca de um benefício no jogo. O parceiro de anúncios
-  (Google AdMob) pode tratar identificadores de publicidade do aparelho
-  conforme a <a href="https://policies.google.com/privacy">Política de
-  Privacidade do Google</a> e a
-  <a href="https://support.google.com/admob/answer/6128543">documentação do
-  AdMob</a>. Onde exigido, um aviso de consentimento será exibido antes de
-  qualquer anúncio personalizado. Você pode:</p>
+  <h2>3. Medição de uso (Firebase Analytics e BigQuery)</h2>
+  <p>Desde a versão 3.4.9 o PRISMIX usa o <b>Firebase Analytics / Google
+  Analytics 4</b>. Em 17 de agosto de 2026 passamos a exportar diariamente esses
+  eventos para o <b>Google BigQuery</b>, em um projeto nosso, para conseguir
+  analisar os dados com mais detalhe.</p>
+  <p><b>Para quê, em uma frase:</b> sou um desenvolvedor sozinho e essa medição é
+  a única forma de saber que 54% de quem abre o app nunca começa uma partida,
+  que uma compra falhou em determinado aparelho ou que uma tela quebrou numa
+  versão do Android. Sem isso, os defeitos ficam invisíveis.</p>
+  <p><b>Base legal:</b> legítimo interesse (art. 7º, IX, da LGPD), com a
+  finalidade específica de corrigir defeitos e melhorar o produto — nunca para
+  publicidade, remarketing ou perfil de anúncio. Aplicamos a limitação ao mínimo
+  necessário (art. 6º, III): não enviamos nome, e-mail, contatos, localização
+  precisa nem conteúdo digitado por você.</p>
+  <p><b>Como se opor / como reduzir essa coleta hoje:</b></p>
   <ul>
-    <li>Redefinir ou excluir seu ID de publicidade: Configurações do Android →
-    Google → Anúncios;</li>
-    <li>Desativar anúncios personalizados no mesmo menu;</li>
-    <li>Comprar o PRISMIX Premium, que remove os anúncios.</li>
+    <li><b>Excluir ou redefinir o identificador de publicidade:</b> Configurações
+    do Android → Google → Anúncios → "Excluir ID de publicidade". Isso interrompe
+    o uso desse identificador na medição.</li>
+    <li><b>Zerar o identificador do aparelho:</b> Configurações do Android →
+    Apps → PRISMIX → Armazenamento → "Limpar dados", ou desinstalar o app. Um
+    novo identificador é criado do zero e os eventos futuros não ficam ligados ao
+    anterior. (Atenção: isso também apaga seu save.)</li>
+    <li><b>Pedir a exclusão do histórico já enviado:</b> escreva para
+    <b>techrabit99@gmail.com</b> — veja a seção 8.</li>
   </ul>
+  <p>Detalhes técnicos sobre o que o Firebase coleta estão em
+  <a href="https://firebase.google.com/support/privacy">firebase.google.com/support/privacy</a>
+  e na <a href="https://policies.google.com/privacy">Política de Privacidade do
+  Google</a>.</p>
 
-  <h2>4. Compras e pagamentos</h2>
-  <p>Pagamentos são processados exclusivamente pelo Google Play. Não temos
-  acesso a número de cartão ou dados bancários. Reembolsos seguem a
+  <h2>4. Vídeos de anúncio opcionais (Unity)</h2>
+  <p>Desde a versão 3.4.45 o PRISMIX oferece vídeos de anúncio <b>com
+  recompensa</b> em três momentos: continuar a partida depois de usar a
+  continuação grátis, dobrar o baú diário e ganhar 1 martelo quando eles
+  acabam. <b>Nenhum vídeo toca sozinho</b>: não há anúncio entre partidas, em
+  banner ou na abertura do app. O vídeo só começa quando você toca no botão
+  "📺 Ver vídeo". Quem tem o <b>PRISMIX Premium não vê vídeos</b>.</p>
+  <p>Os vídeos são servidos pela <b>Unity</b> (LevelPlay e Unity Ads). Quando o
+  botão aparece e quando o vídeo toca, o SDK da Unity coleta o endereço IP,
+  identificadores do aparelho (inclusive o identificador de publicidade do
+  Android), dados técnicos do aparelho e a sua interação com o anúncio. A Unity
+  usa esses dados como <b>controladora independente</b> — inclusive para
+  anúncios personalizados, medição e atribuição — e pode compartilhá-los com
+  anunciantes, conforme a
+  <a href="https://unity.com/legal/game-player-and-app-user-privacy-policy">política
+  de privacidade da Unity para jogadores</a>. Nós recebemos da Unity apenas
+  números agregados (quantos anúncios foram exibidos e quanto renderam) e a
+  confirmação de que o vídeo foi assistido, para entregar a recompensa.</p>
+  <p>Na nossa própria medição (seção 3) registramos só o <b>andamento do
+  vídeo</b>: em qual dos três lugares o botão apareceu, se você tocou e se a
+  recompensa foi entregue.</p>
+  <p><b>Como reduzir essa coleta:</b> não toque nos botões de vídeo; ou, nas
+  Configurações do Android → Google → Anúncios, exclua o identificador de
+  publicidade, o que impede o uso dele por qualquer rede de anúncios; ou exerça
+  seus direitos diretamente com a Unity, pelos canais indicados na política
+  dela.</p>
+
+  <h2>5. Compras e pagamentos</h2>
+  <p>Pagamentos são processados <b>exclusivamente pelo Google Play</b>. Não temos
+  acesso a número de cartão nem a dados bancários. Reembolsos seguem a
   <a href="https://support.google.com/googleplay/answer/2479637">política de
-  reembolso do Google Play</a>. Itens virtuais ficam registrados no seu
-  aparelho e na sua conta Google Play (para restauração).</p>
+  reembolso do Google Play</a>. Itens virtuais ficam registrados no seu aparelho
+  e na sua conta Google Play (para restauração).</p>
+  <p>Registramos na medição (seção 3) o <b>andamento da compra</b>: que a loja foi
+  aberta, qual item foi tocado, se a compra foi concluída, o valor e a moeda, e —
+  quando falha — o motivo técnico devolvido pelo Google Play. Isso existe para eu
+  detectar cobranças que não entregam o item. Não registramos sua identidade nem
+  qualquer dado de pagamento.</p>
 
-  <h2>5. Crianças e adolescentes</h2>
-  <p>O jogo é adequado para todas as idades e foi desenhado para <b>não
-  coletar dados pessoais de nenhum jogador</b>, inclusive crianças,
-  atendendo ao art. 14 da LGPD (melhor interesse da criança). Compras exigem
-  a autenticação da conta Google Play do aparelho — recomendamos que
-  responsáveis ativem o controle parental e a exigência de senha para compras
-  no Google Play.</p>
+  <h2>6. Crianças e adolescentes</h2>
+  <p>O PRISMIX <b>não é dirigido a menores de 13 anos</b>. Não pedimos
+  idade, nome, e-mail nem qualquer dado que identifique você diretamente — mas,
+  como esta política deixa claro, o app coleta dados de uso ligados a um
+  identificador do aparelho, e por isso não afirmamos que "não há coleta".</p>
+  <p>O art. 14 da LGPD alcança crianças <b>e adolescentes</b>: o tratamento é
+  realizado em seu melhor interesse, com apoio nas hipóteses do art. 7º, nos
+  termos do <b>Enunciado CD/ANPD nº 1, de 2023</b>. Não invocamos o consentimento
+  parental do art. 14, §1º porque o aplicativo não é dirigido a menores de 13
+  anos.</p>
+  <p>Se você é pai, mãe ou responsável e acredita que uma criança menor de 13
+  anos usou o aplicativo, escreva para
+  <a href="mailto:techrabit99@gmail.com">techrabit99@gmail.com</a>: tratamos o
+  pedido com prioridade, orientamos como zerar no próprio aparelho o
+  identificador usado na medição e pedimos ao Google a exclusão dos registros que
+  seja possível localizar.</p>
+  <p>Compras exigem a autenticação da conta Google Play do aparelho —
+  recomendamos que responsáveis ativem o controle parental e a exigência de senha
+  para compras no Google Play. O ranking do Google Play Jogos usa o nome de
+  jogador e o avatar da conta Google, e a conexão acontece automaticamente com a
+  conta já presente no aparelho; a visibilidade do perfil é configurada — e a
+  conexão pode ser desfeita — no aplicativo <b>Google Play Jogos</b>.</p>
 
-  <h2>6. Seus direitos (art. 18 da LGPD)</h2>
-  <p>Você pode solicitar a qualquer momento: confirmação de tratamento,
-  acesso, correção, anonimização, portabilidade, eliminação de dados,
-  informação sobre compartilhamentos e revogação de consentimento. Como não
-  mantemos dados pessoais em servidores, a maioria das solicitações se
-  resolve no próprio aparelho (seção 7). Para qualquer pedido:
-  <b>techrabit99@gmail.com</b> — respondemos em até 15 dias. Você
-  também pode peticionar à <b>Autoridade Nacional de Proteção de Dados
+  <h2>7. Seus direitos (art. 18 da LGPD)</h2>
+  <p>Você pode solicitar a qualquer momento: confirmação de tratamento, acesso,
+  correção, anonimização, portabilidade, eliminação de dados e informação sobre
+  compartilhamentos.</p>
+  <p>Parte dos dados fica <b>no seu aparelho</b> (o save) e parte fica <b>no
+  Google Analytics/BigQuery</b>, ligada a um identificador do aparelho, e no
+  <b>Google Play Jogos</b>, ligada à sua conta Google. Para exercer qualquer
+  direito sobre essas duas últimas partes, escreva para
+  <b>techrabit99@gmail.com</b> — respondemos em até <b>15 dias</b> (art. 19, II).
+  Descreva o pedido e, se possível, o aparelho e a data aproximada em que jogou:
+  sem conta e sem login nossos, essa é a única forma de localizar os
+  registros.</p>
+  <p>Você também pode peticionar à <b>Autoridade Nacional de Proteção de Dados
   (ANPD)</b>: <a href="https://www.gov.br/anpd">gov.br/anpd</a>.</p>
 
-  <h2>7. Exclusão de dados e retenção</h2>
-  <p>Para apagar TODOS os dados do jogo: abra o PRISMIX → ⚙️ Ajustes →
-  "🗑️ Apagar progresso", ou simplesmente desinstale o aplicativo. Como não
-  mantemos cópias em servidores, a exclusão é <b>imediata, completa e
-  irreversível</b>. Não há período de retenção da nossa parte; dados de
-  compra são retidos pelo Google conforme as políticas do Google Play.</p>
+  <h2>8. Exclusão de dados e retenção</h2>
+  <p>Aqui não existe uma tecla única que apague tudo. São três lugares
+  diferentes, e é justo você saber disso:</p>
+  <ul>
+    <li><b>No seu aparelho (o save).</b> PRISMIX → ⚙️ Ajustes →
+    "🗑️ Apagar progresso" zera o save, ou desinstale o app. Isso é imediato e
+    irreversível — mas apaga <b>apenas</b> o que está no aparelho.</li>
+    <li><b>Na medição (Firebase Analytics e BigQuery).</b> Os eventos já enviados
+    <b>não</b> são apagados por "Apagar progresso" nem pela desinstalação. Para
+    apagá-los, escreva para <b>techrabit99@gmail.com</b>: submetemos o pedido de
+    exclusão ao Google e apagamos a cópia no BigQuery. Depois de submetido, o
+    dado some dos relatórios em cerca de 72 horas e é eliminado dos servidores do
+    Google em até 2 meses (até 180 dias em cópias de segurança do Google). Do seu
+    lado, você pode interromper a associação a qualquer momento pelos caminhos da
+    seção 3.</li>
+    <li><b>No Google Play Jogos.</b> Conquistas, pontuações do ranking e o save na
+    nuvem ficam na <b>sua conta Google</b> e <b>sobrevivem à desinstalação</b> —
+    inclusive um marcador simples que registra que o teste grátis do Premium já
+    foi usado naquela conta (é uma medida antifraude deliberada, para o mesmo
+    teste não ser girado várias vezes com reinstalações). Você mesmo pode
+    desconectar o PRISMIX e remover esses dados no aplicativo <b>Google Play
+    Jogos</b> → seu perfil → configurações → excluir dados de jogos, ou em
+    <a href="https://myaccount.google.com">myaccount.google.com</a>.</li>
+  </ul>
+  <p><b>Por quanto tempo guardamos:</b> o save fica no aparelho até você apagar ou
+  desinstalar. Os <b>eventos detalhados</b> no Google Analytics seguem o prazo de
+  retenção configurado na nossa propriedade, que é de <b>no máximo 14 meses</b>
+  (teto do plano gratuito), e depois são excluídos automaticamente pelo Google —
+  os relatórios estatísticos já agregados (por exemplo, "quantas partidas foram
+  jogadas em julho") não contêm identificadores e permanecem. Enquanto o projeto
+  estiver no <b>plano gratuito do BigQuery</b>, as tabelas exportadas <b>se apagam
+  sozinhas em 60 dias</b>. Dados de compra são retidos pelo Google conforme as
+  políticas do Google Play, inclusive por obrigações fiscais e de reembolso.</p>
 
-  <h2>8. Transferência internacional</h2>
-  <p>Os serviços do Google (Play, AdMob) podem processar dados em servidores
-  fora do Brasil, sob as salvaguardas do próprio Google, em conformidade com
-  os arts. 33 e seguintes da LGPD.</p>
+  <h2>9. Transferência internacional de dados</h2>
+  <p>Os dados de uso são processados pelo Google (Firebase Analytics, BigQuery e
+  Google Play Jogos) em servidores <b>fora do Brasil</b>, principalmente nos
+  Estados Unidos, assim como os dados de cobrança do Google Play. Os dados dos
+  vídeos de anúncio opcionais são tratados pela <b>Unity</b>, também fora do
+  Brasil, sob a responsabilidade dela como controladora (seção 4). Essa
+  transferência ocorre sob as <b>cláusulas contratuais dos termos de
+  processamento de dados do Google</b> aplicáveis a esses serviços, na forma dos
+  <b>arts. 33 e seguintes da LGPD</b>. O Google atua como operador e a Steel
+  Rabbit Software permanece como controladora. Mediante solicitação por e-mail,
+  informamos quais salvaguardas estão vigentes.</p>
 
-  <h2>9. Segurança</h2>
-  <p>O save do jogo é gravado com verificação de integridade no seu aparelho.
-  O app não pede permissões do Android além das necessárias para vibrar e
-  acessar a internet (anúncios/compras). Adotamos medidas técnicas razoáveis
-  (art. 46 da LGPD), e o app não executa código de terceiros fora dos
-  serviços do Google declarados aqui.</p>
+  <h2>10. Segurança e permissões do Android</h2>
+  <p>O save do jogo é gravado com verificação de integridade no seu aparelho, e
+  todo tráfego com os serviços do Google é criptografado em trânsito. Adotamos
+  medidas técnicas razoáveis (art. 46 da LGPD).</p>
+  <p>As permissões que você percebe são <b>vibrar</b>, <b>acessar a internet</b> e
+  <b>enviar notificações</b> (esta última só é pedida quando você ativa os
+  lembretes). Além delas, o pacote publicado inclui permissões técnicas exigidas
+  pelos componentes do Google que o app usa — estado da conexão de rede, manter o
+  aparelho acordado para reagendar lembretes, reagendar lembretes após reiniciar
+  o aparelho, cobrança do Google Play, informação de origem da instalação
+  (install referrer), o identificador de publicidade e os serviços de medição e
+  atribuição do próprio Android (Privacy Sandbox), trazidos pelo SDK do Firebase
+  Analytics, e, desde a 3.4.45, a permissão de tópicos do Privacy Sandbox e o
+  identificador de conjunto de apps (App Set ID) do Google, trazidos pelo SDK de
+  anúncios da Unity. <b>Nenhuma delas dá acesso a
+  câmera, microfone, localização, contatos, arquivos ou mensagens.</b></p>
+  <p>Os componentes de terceiros embarcados no app são: <b>Firebase Analytics</b>
+  (medição), <b>Google Play Billing</b> via biblioteca de compras
+  <b>cordova-plugin-purchase</b> (cobrança), <b>Google Play Jogos</b>
+  (conquistas, ranking e save na nuvem), <b>atualização in-app da Play Store</b>,
+  <b>notificações locais</b>, <b>Unity LevelPlay / Unity Ads</b> (vídeos de
+  anúncio opcionais) e o <b>compartilhamento nativo do Android</b> (abre a lista
+  de apps para enviar seu recorde; não coleta dado nenhum) — todos declarados
+  nesta política.</p>
 
-  <h2>10. Alterações desta política</h2>
-  <p>Se esta política mudar de forma relevante (por exemplo, se algum dia
-  existir ranking online), avisaremos dentro do jogo antes da mudança valer e
+  <h2>11. Alterações desta política</h2>
+  <p><b>Versão 3.1 (11/10/2026):</b> declara os vídeos de anúncio opcionais da
+  Unity (seção 4), que voltaram ao jogo na versão 3.4.45 — de julho a outubro de
+  2026 o PRISMIX ficou sem anúncio nenhum —, as permissões que o SDK da Unity
+  acrescenta e o compartilhamento nativo do Android.</p>
+  <p><b>Versão 3.0 (21/08/2026):</b> corrigiu um documento que havia ficado
+  desatualizado: ele ainda descrevia um sistema de anúncios antigo, não
+  mencionava a medição por Firebase Analytics nem o ranking online, e afirmava,
+  de forma incorreta, que nenhum dado saía do aparelho.</p>
+  <p>Se esta política mudar de forma relevante, avisaremos dentro do jogo e
   atualizaremos a data no topo. O histórico fica disponível mediante pedido.</p>
 
-  <h2>11. Contato</h2>
-  <p>Encarregado pelo tratamento de dados (art. 41 da LGPD) e dúvidas em
-  geral: <b>techrabit99@gmail.com</b></p>
+  <h2>12. Contato</h2>
+  <p><b>Canal de atendimento ao titular</b> (art. 41, §2º, I, da LGPD, na forma
+  da Resolução CD/ANPD nº 2/2022, aplicável a agentes de tratamento de pequeno
+  porte) e dúvidas em geral: <b>techrabit99@gmail.com</b></p>
 
   <p><a href="termos.html">→ Termos de Uso do PRISMIX</a></p>
 </body>
